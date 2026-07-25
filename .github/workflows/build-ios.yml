@@ -1,0 +1,49 @@
+name: Build iOS (.ipa sin firmar)
+
+# Ver Opción C, sección 7 de docs/proyecto_flash_multimovil.md.
+# El .ipa resultante NO está firmado: Sideloadly/SideStore lo firman en el paso de instalación.
+#
+# IMPORTANTE: en un repo público, los minutos de este runner macOS son gratis e ilimitados.
+# En un repo privado, consumen la cuota mensual gratuita a una tasa 10x.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias JS
+        run: npm ci
+
+      - name: Instalar pods
+        run: cd ios && pod install
+
+      - name: Compilar (sin firmar)
+        run: |
+          xcodebuild build \
+            -workspace ios/FlashMultimovil.xcworkspace \
+            -scheme FlashMultimovil \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+      - name: Empaquetar como .ipa
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/FlashMultimovil.app Payload/
+          cd Payload && zip -qr ../FlashMultimovil.ipa . && cd ..
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FlashMultimovil-ipa
+          path: FlashMultimovil.ipa
