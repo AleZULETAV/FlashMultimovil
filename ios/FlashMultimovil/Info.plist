@@ -43,8 +43,8 @@
 	<!-- El nombre de servicio debe coincidir con el usado en MCNearbyServiceAdvertiser/Browser (PeerNetworkModule.swift) -->
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_flash-multimovil._tcp</string>
-		<string>_flash-multimovil._udp</string>
+		<string>_flashmulti._tcp</string>
+		<string>_flashmulti._udp</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

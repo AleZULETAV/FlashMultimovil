@@ -1,16 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
+import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
+import type { TriggerMessage } from '../protocol/messages';
 
 /**
  * UI del móvil madre: cuenta atrás, disparo, gestión de la sesión de peers.
- * Lógica real por implementar (ver roadmap, sección 8 del documento de proyecto).
+ * Por ahora "disparar" solo manda un TriggerMessage de prueba, sin tocar la cámara todavía.
  */
 export default function MotherModeScreen(): React.JSX.Element {
+  const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
+
+  useEffect(() => {
+    PeerNetwork.startSession('movil-madre');
+
+    const onConnected = peerNetworkEvents?.addListener('onPeerConnected', (e: { peerId: string }) => {
+      setConnectedPeers((prev) => Array.from(new Set([...prev, e.peerId])));
+    });
+    const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', (e: { peerId: string }) => {
+      setConnectedPeers((prev) => prev.filter((id) => id !== e.peerId));
+    });
+
+    return () => {
+      onConnected?.remove();
+      onDisconnected?.remove();
+      PeerNetwork.stopSession();
+    };
+  }, []);
+
+  const disparar = () => {
+    const message: TriggerMessage = { type: 'trigger', delayMs: 300, windowMs: 400, mode: 'torch' };
+    PeerNetwork.broadcast(JSON.stringify(message));
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modo: móvil madre</Text>
-      <Text>TODO: iniciar sesión, enviar TriggerMessage, disparar cámara.</Text>
-      <Button title="Disparar (placeholder)" onPress={() => {}} />
+      <Text>
+        Peers conectados: {connectedPeers.length === 0 ? 'ninguno todavía' : connectedPeers.join(', ')}
+      </Text>
+      <Button title="Disparar (mensaje de prueba)" onPress={disparar} />
     </View>
   );
 }
