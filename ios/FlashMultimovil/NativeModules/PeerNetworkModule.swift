@@ -111,6 +111,13 @@ extension PeerNetworkModule: MCNearbyServiceAdvertiserDelegate {
   func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
     invitationHandler(true, session)
   }
+
+  // Aunque el protocolo la marca como opcional, en la práctica hay que implementarla:
+  // si el anuncio falla (ej. el permiso de red local aún no se ha resuelto) y no está
+  // implementada, la app truena en vez de simplemente reportar el error.
+  func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
+    NSLog("PeerNetworkModule: didNotStartAdvertisingPeer: \(error.localizedDescription)")
+  }
 }
 
 extension PeerNetworkModule: MCNearbyServiceBrowserDelegate {
@@ -120,4 +127,9 @@ extension PeerNetworkModule: MCNearbyServiceBrowserDelegate {
   }
 
   func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {}
+
+  // Mismo caso que arriba, del lado del browser.
+  func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
+    NSLog("PeerNetworkModule: didNotStartBrowsingForPeers: \(error.localizedDescription)")
+  }
 }
