@@ -1,7 +1,7 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventEmitter.h>
 
-@interface RCT_EXTERN_MODULE(PeerNetworkModule, RCTEventEmitter)
+@interface RCT_EXTERN_MODULE(PeerNetworkModule, NSObject)
 
 RCT_EXTERN_METHOD(startSession:(NSString *)displayName resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(broadcast:(NSString *)messageJson resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
