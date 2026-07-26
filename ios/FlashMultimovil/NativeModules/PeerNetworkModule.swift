@@ -1,5 +1,6 @@
 import Foundation
 import MultipeerConnectivity
+import React
 
 /// Puente nativo hacia MultipeerConnectivity: descubre peers y envía/recibe
 /// los mensajes de coordinación (src/protocol/messages.ts).

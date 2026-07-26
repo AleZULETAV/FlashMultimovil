@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import React
 
 /// Puente nativo hacia AVFoundation para control de linterna y exposición manual.
 /// Ver sección 5.2 de docs/proyecto_flash_multimovil.md.
