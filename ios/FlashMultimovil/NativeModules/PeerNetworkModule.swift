@@ -70,6 +70,14 @@ class PeerNetworkModule: RCTEventEmitter {
     return ["onPeerMessage", "onPeerConnected", "onPeerDisconnected"]
   }
 
+  @objc override func addListener(_ eventName: String) {
+    super.addListener(eventName)
+  }
+
+  @objc override func removeListeners(_ count: Double) {
+    super.removeListeners(count)
+  }
+
   override static func requiresMainQueueSetup() -> Bool {
     return true
   }
