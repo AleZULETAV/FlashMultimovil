@@ -12,6 +12,11 @@ private let serviceType = "flashmulti"
 ///
 /// Todos los dispositivos anuncian Y buscan al mismo tiempo con el mismo serviceType;
 /// la distinción "madre"/"remoto" es solo a nivel de la app (mensajes), no de esta capa.
+///
+/// Todo el cuerpo de cada método está envuelto en PNTryCatch (ver TryCatch.h/.m) porque
+/// Swift no puede atrapar NSException con do/catch — sin esto, cualquier excepción de
+/// Objective-C (incluidas las que lanzan frameworks de Apple como MultipeerConnectivity)
+/// tumba todo el proceso en vez de poder reportarse a JS como un rechazo normal.
 @objc(PeerNetworkModule)
 class PeerNetworkModule: RCTEventEmitter {
 
@@ -22,37 +27,42 @@ class PeerNetworkModule: RCTEventEmitter {
 
   @objc(startSession:resolver:rejecter:)
   func startSession(_ displayName: String, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
-    let id = MCPeerID(displayName: displayName)
-    let newSession = MCSession(peer: id, securityIdentity: nil, encryptionPreference: .required)
-    newSession.delegate = self
+    let caught = PNTryCatch {
+      let id = MCPeerID(displayName: displayName)
+      let newSession = MCSession(peer: id, securityIdentity: nil, encryptionPreference: .required)
+      newSession.delegate = self
 
-    let newAdvertiser = MCNearbyServiceAdvertiser(peer: id, discoveryInfo: nil, serviceType: serviceType)
-    newAdvertiser.delegate = self
+      let newAdvertiser = MCNearbyServiceAdvertiser(peer: id, discoveryInfo: nil, serviceType: serviceType)
+      newAdvertiser.delegate = self
 
-    let newBrowser = MCNearbyServiceBrowser(peer: id, serviceType: serviceType)
-    newBrowser.delegate = self
+      let newBrowser = MCNearbyServiceBrowser(peer: id, serviceType: serviceType)
+      newBrowser.delegate = self
 
-    peerID = id
-    session = newSession
-    advertiser = newAdvertiser
-    browser = newBrowser
+      self.peerID = id
+      self.session = newSession
+      self.advertiser = newAdvertiser
+      self.browser = newBrowser
 
-    newAdvertiser.startAdvertisingPeer()
-    newBrowser.startBrowsingForPeers()
-
+      newAdvertiser.startAdvertisingPeer()
+      newBrowser.startBrowsingForPeers()
+    }
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+      return
+    }
     resolve(nil)
   }
 
   @objc(broadcast:resolver:rejecter:)
   func broadcast(_ messageJson: String, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
-    guard let session = session, let data = messageJson.data(using: .utf8), !session.connectedPeers.isEmpty else {
-      resolve(nil)
-      return
+    let caught = PNTryCatch {
+      guard let session = self.session, let data = messageJson.data(using: .utf8), !session.connectedPeers.isEmpty else {
+        return
+      }
+      try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
     }
-    do {
-      try session.send(data, toPeers: session.connectedPeers, with: .reliable)
-    } catch {
-      reject("BROADCAST_FAILED", error.localizedDescription, error)
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
       return
     }
     resolve(nil)
@@ -60,9 +70,15 @@ class PeerNetworkModule: RCTEventEmitter {
 
   @objc(stopSession:rejecter:)
   func stopSession(_ resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
-    advertiser?.stopAdvertisingPeer()
-    browser?.stopBrowsingForPeers()
-    session?.disconnect()
+    let caught = PNTryCatch {
+      self.advertiser?.stopAdvertisingPeer()
+      self.browser?.stopBrowsingForPeers()
+      self.session?.disconnect()
+    }
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+      return
+    }
     resolve(nil)
   }
 
@@ -112,9 +128,6 @@ extension PeerNetworkModule: MCNearbyServiceAdvertiserDelegate {
     invitationHandler(true, session)
   }
 
-  // Aunque el protocolo la marca como opcional, en la práctica hay que implementarla:
-  // si el anuncio falla (ej. el permiso de red local aún no se ha resuelto) y no está
-  // implementada, la app truena en vez de simplemente reportar el error.
   func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
     NSLog("PeerNetworkModule: didNotStartAdvertisingPeer: \(error.localizedDescription)")
   }
@@ -128,7 +141,6 @@ extension PeerNetworkModule: MCNearbyServiceBrowserDelegate {
 
   func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {}
 
-  // Mismo caso que arriba, del lado del browser.
   func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
     NSLog("PeerNetworkModule: didNotStartBrowsingForPeers: \(error.localizedDescription)")
   }

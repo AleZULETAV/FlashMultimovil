@@ -45,6 +45,7 @@ export default function App(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Text style={{ color: '#888', fontSize: 12 }}>Build: v8-diagnostico</Text>
       <View style={styles.buttons}>
         <Button title="Soy el móvil madre" onPress={() => setMode('mother')} />
         <Button title="Soy un móvil remoto" onPress={() => setMode('remote')} />

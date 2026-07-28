@@ -9,9 +9,10 @@ import type { TriggerMessage } from '../protocol/messages';
  */
 export default function MotherModeScreen(): React.JSX.Element {
   const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    PeerNetwork.startSession('movil-madre');
+    PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
 
     const onConnected = peerNetworkEvents?.addListener('onPeerConnected', (e: { peerId: string }) => {
       setConnectedPeers((prev) => Array.from(new Set([...prev, e.peerId])));
@@ -35,6 +36,7 @@ export default function MotherModeScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modo: móvil madre</Text>
+      {sessionError && <Text style={{ color: 'red' }} selectable>Error: {sessionError}</Text>}
       <Text>
         Peers conectados: {connectedPeers.length === 0 ? 'ninguno todavía' : connectedPeers.join(', ')}
       </Text>

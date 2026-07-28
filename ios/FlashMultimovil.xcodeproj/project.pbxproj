@@ -15,6 +15,7 @@
 		C92C029998246FACD3520A9A /* CameraControlModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 60CCA74C3BBB8B11156FF941 /* CameraControlModule.m */; };
 		CD2E083B7C0C2E549A0BF8D5 /* PeerNetworkModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4431BEF28668FF3F73D901C8 /* PeerNetworkModule.swift */; };
 		F32289756F3A518CE4CBB767 /* PeerNetworkModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D28257A33A41FA7E5FE4E01 /* PeerNetworkModule.m */; };
+		5F93D56D801BC3CC29333E81 /* TryCatch.m in Sources */ = {isa = PBXBuildFile; fileRef = 44FF2F924A2D7550CF31881C /* TryCatch.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,9 @@
 		60CCA74C3BBB8B11156FF941 /* CameraControlModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = CameraControlModule.m; path = FlashMultimovil/NativeModules/CameraControlModule.m; sourceTree = "<group>"; };
 		4431BEF28668FF3F73D901C8 /* PeerNetworkModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PeerNetworkModule.swift; path = FlashMultimovil/NativeModules/PeerNetworkModule.swift; sourceTree = "<group>"; };
 		2D28257A33A41FA7E5FE4E01 /* PeerNetworkModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = PeerNetworkModule.m; path = FlashMultimovil/NativeModules/PeerNetworkModule.m; sourceTree = "<group>"; };
+		0F6AD0388BA87E62DB72CCFA /* TryCatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = TryCatch.h; path = FlashMultimovil/NativeModules/TryCatch.h; sourceTree = "<group>"; };
+		44FF2F924A2D7550CF31881C /* TryCatch.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = TryCatch.m; path = FlashMultimovil/NativeModules/TryCatch.m; sourceTree = "<group>"; };
+		243EE6339509A842378A77E9 /* FlashMultimovil-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "FlashMultimovil-Bridging-Header.h"; path = "FlashMultimovil/FlashMultimovil-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +58,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+				243EE6339509A842378A77E9 /* FlashMultimovil-Bridging-Header.h */,
 				034D056532FDDDB6AE02A212 /* NativeModules */,
 			);
 			name = FlashMultimovil;
@@ -66,6 +71,8 @@
 				60CCA74C3BBB8B11156FF941 /* CameraControlModule.m */,
 				4431BEF28668FF3F73D901C8 /* PeerNetworkModule.swift */,
 				2D28257A33A41FA7E5FE4E01 /* PeerNetworkModule.m */,
+				0F6AD0388BA87E62DB72CCFA /* TryCatch.h */,
+				44FF2F924A2D7550CF31881C /* TryCatch.m */,
 			);
 			name = NativeModules;
 			sourceTree = "<group>";
@@ -269,6 +276,7 @@
 				C92C029998246FACD3520A9A /* CameraControlModule.m in Sources */,
 				CD2E083B7C0C2E549A0BF8D5 /* PeerNetworkModule.swift in Sources */,
 				F32289756F3A518CE4CBB767 /* PeerNetworkModule.m in Sources */,
+				5F93D56D801BC3CC29333E81 /* TryCatch.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,6 +306,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = FlashMultimovil;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OBJC_BRIDGING_HEADER = "FlashMultimovil/FlashMultimovil-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -327,6 +336,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = FlashMultimovil;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OBJC_BRIDGING_HEADER = "FlashMultimovil/FlashMultimovil-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";

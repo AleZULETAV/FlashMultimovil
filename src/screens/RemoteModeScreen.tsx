@@ -9,9 +9,10 @@ import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
 export default function RemoteModeScreen(): React.JSX.Element {
   const [connected, setConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<string>('(nada todavía)');
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    PeerNetwork.startSession('movil-remoto');
+    PeerNetwork.startSession('movil-remoto').catch((e: Error) => setSessionError(String(e?.message ?? e)));
 
     const onConnected = peerNetworkEvents?.addListener('onPeerConnected', () => setConnected(true));
     const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', () => setConnected(false));
@@ -28,6 +29,7 @@ export default function RemoteModeScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modo: móvil remoto</Text>
+      {sessionError && <Text style={{ color: 'red' }} selectable>Error: {sessionError}</Text>}
       <Text>{connected ? 'Conectado al móvil madre' : 'Buscando móvil madre...'}</Text>
       <Text>Último mensaje: {lastMessage}</Text>
     </View>
