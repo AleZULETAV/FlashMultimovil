@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
-import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
+import PeerNetwork from '../native/PeerNetwork';
 import type { TriggerMessage } from '../protocol/messages';
 
 /**
@@ -8,22 +8,23 @@ import type { TriggerMessage } from '../protocol/messages';
  * Por ahora "disparar" solo manda un TriggerMessage de prueba, sin tocar la cámara todavía.
  */
 export default function MotherModeScreen(): React.JSX.Element {
-  const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
+  const [connectedPeers] = useState<string[]>([]);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
     PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
 
-    const onConnected = peerNetworkEvents?.addListener('onPeerConnected', (e: { peerId: string }) => {
-      setConnectedPeers((prev) => Array.from(new Set([...prev, e.peerId])));
-    });
-    const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', (e: { peerId: string }) => {
-      setConnectedPeers((prev) => prev.filter((id) => id !== e.peerId));
-    });
+    // PRUEBA DE BISECCIÓN: addListener desactivado a propósito por ahora.
+    // const onConnected = peerNetworkEvents?.addListener('onPeerConnected', (e: { peerId: string }) => {
+    //   setConnectedPeers((prev) => Array.from(new Set([...prev, e.peerId])));
+    // });
+    // const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', (e: { peerId: string }) => {
+    //   setConnectedPeers((prev) => prev.filter((id) => id !== e.peerId));
+    // });
 
     return () => {
-      onConnected?.remove();
-      onDisconnected?.remove();
+      // onConnected?.remove();
+      // onDisconnected?.remove();
       PeerNetwork.stopSession();
     };
   }, []);

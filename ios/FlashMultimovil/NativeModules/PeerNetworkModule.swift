@@ -27,29 +27,8 @@ class PeerNetworkModule: RCTEventEmitter {
 
   @objc(startSession:resolver:rejecter:)
   func startSession(_ displayName: String, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
-    let caught = PNTryCatch {
-      let id = MCPeerID(displayName: displayName)
-      let newSession = MCSession(peer: id, securityIdentity: nil, encryptionPreference: .required)
-      newSession.delegate = self
-
-      let newAdvertiser = MCNearbyServiceAdvertiser(peer: id, discoveryInfo: nil, serviceType: serviceType)
-      newAdvertiser.delegate = self
-
-      let newBrowser = MCNearbyServiceBrowser(peer: id, serviceType: serviceType)
-      newBrowser.delegate = self
-
-      self.peerID = id
-      self.session = newSession
-      self.advertiser = newAdvertiser
-      self.browser = newBrowser
-
-      newAdvertiser.startAdvertisingPeer()
-      newBrowser.startBrowsingForPeers()
-    }
-    if let caught = caught {
-      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
-      return
-    }
+    // PRUEBA DE BISECCIÓN: cuerpo vaciado a propósito, sin tocar MultipeerConnectivity,
+    // para confirmar si el crash viene de aquí o de otro lado. Ver docs/proyecto_flash_multimovil.md.
     resolve(nil)
   }
 
