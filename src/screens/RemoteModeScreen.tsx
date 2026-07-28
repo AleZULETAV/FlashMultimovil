@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import PeerNetwork from '../native/PeerNetwork';
+// import PeerNetwork from '../native/PeerNetwork'; // desactivado para la prueba de aislamiento
 
 /**
  * UI del móvil remoto: se conecta a la sesión y muestra el último mensaje recibido.
@@ -9,21 +9,14 @@ import PeerNetwork from '../native/PeerNetwork';
 export default function RemoteModeScreen(): React.JSX.Element {
   const [connected] = useState(false);
   const [lastMessage] = useState<string>('(nada todavía)');
-  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [sessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    PeerNetwork.startSession('movil-remoto').catch((e: Error) => setSessionError(String(e?.message ?? e)));
-
-    // PRUEBA DE BISECCIÓN: addListener desactivado a propósito por ahora.
-    // const onConnected = peerNetworkEvents?.addListener('onPeerConnected', () => setConnected(true));
-    // const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', () => setConnected(false));
-    // const onMessage = peerNetworkEvents?.addListener('onPeerMessage', (json: string) => setLastMessage(json));
+    // PRUEBA DE AISLAMIENTO FINAL: ninguna llamada al módulo nativo en absoluto.
+    // PeerNetwork.startSession('movil-remoto').catch((e: Error) => setSessionError(String(e?.message ?? e)));
 
     return () => {
-      // onConnected?.remove();
-      // onDisconnected?.remove();
-      // onMessage?.remove();
-      PeerNetwork.stopSession();
+      // PeerNetwork.stopSession();
     };
   }, []);
 

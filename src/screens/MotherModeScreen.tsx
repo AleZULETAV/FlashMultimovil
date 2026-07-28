@@ -9,23 +9,16 @@ import type { TriggerMessage } from '../protocol/messages';
  */
 export default function MotherModeScreen(): React.JSX.Element {
   const [connectedPeers] = useState<string[]>([]);
-  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [sessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
-
-    // PRUEBA DE BISECCIÓN: addListener desactivado a propósito por ahora.
-    // const onConnected = peerNetworkEvents?.addListener('onPeerConnected', (e: { peerId: string }) => {
-    //   setConnectedPeers((prev) => Array.from(new Set([...prev, e.peerId])));
-    // });
-    // const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', (e: { peerId: string }) => {
-    //   setConnectedPeers((prev) => prev.filter((id) => id !== e.peerId));
-    // });
+    // PRUEBA DE AISLAMIENTO FINAL: ninguna llamada al módulo nativo en absoluto,
+    // ni siquiera startSession. Si esto también crashea, el problema nunca tuvo
+    // que ver con PeerNetworkModule ni con MultipeerConnectivity.
+    // PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
 
     return () => {
-      // onConnected?.remove();
-      // onDisconnected?.remove();
-      PeerNetwork.stopSession();
+      // PeerNetwork.stopSession();
     };
   }, []);
 
