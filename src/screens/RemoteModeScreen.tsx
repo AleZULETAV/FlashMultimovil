@@ -23,21 +23,33 @@ export default function RemoteModeScreen(): React.JSX.Element {
     const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', () => setConnected(false));
     const onMessage = peerNetworkEvents?.addListener('onPeerMessage', (json: string) => {
       setLastMessage(json);
+
+      let message: CoordinationMessage;
       try {
-        const message = JSON.parse(json) as CoordinationMessage;
-        if (message.type === 'trigger' && message.mode === 'torch') {
-          if (torchTimeoutRef.current) clearTimeout(torchTimeoutRef.current);
+        message = JSON.parse(json) as CoordinationMessage;
+      } catch (e) {
+        setSessionError(`Mensaje no es JSON válido: ${String(e)}`);
+        return;
+      }
+
+      if (message.type === 'trigger' && message.mode === 'torch') {
+        if (torchTimeoutRef.current) clearTimeout(torchTimeoutRef.current);
+        try {
           CameraControl.setTorch(true)
             .then(() => setTorchOn(true))
-            .catch((e: Error) => setSessionError(String(e?.message ?? e)));
-          torchTimeoutRef.current = setTimeout(() => {
+            .catch((e: Error) => setSessionError(`setTorch(true) rechazado: ${String(e?.message ?? e)}`));
+        } catch (e) {
+          setSessionError(`setTorch(true) lanzó de inmediato: ${String(e)}`);
+        }
+        torchTimeoutRef.current = setTimeout(() => {
+          try {
             CameraControl.setTorch(false)
               .then(() => setTorchOn(false))
-              .catch((e: Error) => setSessionError(String(e?.message ?? e)));
-          }, message.windowMs);
-        }
-      } catch {
-        // Mensaje que no es JSON válido; lo ignoramos, no debería pasar con nuestro protocolo.
+              .catch((e: Error) => setSessionError(`setTorch(false) rechazado: ${String(e?.message ?? e)}`));
+          } catch (e) {
+            setSessionError(`setTorch(false) lanzó de inmediato: ${String(e)}`);
+          }
+        }, message.windowMs);
       }
     });
 
@@ -46,7 +58,11 @@ export default function RemoteModeScreen(): React.JSX.Element {
       onDisconnected?.remove();
       onMessage?.remove();
       if (torchTimeoutRef.current) clearTimeout(torchTimeoutRef.current);
-      CameraControl.setTorch(false).catch(() => {});
+      try {
+        CameraControl.setTorch(false).catch(() => {});
+      } catch {
+        // ignorar en limpieza
+      }
       PeerNetwork.stopSession();
     };
   }, []);
@@ -54,6 +70,7 @@ export default function RemoteModeScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modo: móvil remoto</Text>
+      <Text style={styles.debug}>CameraControl disponible: {CameraControl ? 'sí' : 'NO (esto es el problema)'}</Text>
       {sessionError && <Text style={styles.error} selectable>Error: {sessionError}</Text>}
       <Text>{connected ? 'Conectado al móvil madre' : 'Buscando móvil madre...'}</Text>
       <Text>Linterna: {torchOn ? 'ENCENDIDA' : 'apagada'}</Text>
@@ -65,5 +82,6 @@ export default function RemoteModeScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: 'bold', color: '#000' },
+  debug: { color: '#888', fontSize: 12 },
   error: { color: 'red' },
 });
