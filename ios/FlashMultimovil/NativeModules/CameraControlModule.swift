@@ -18,7 +18,28 @@ class CameraControlModule: NSObject {
 
   @objc(setTorch:resolver:rejecter:)
   func setTorch(_ on: Bool, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
-    // TODO
+    var swiftError: Error?
+    let caught = PNTryCatch {
+      guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else {
+        swiftError = NSError(domain: "CameraControlModule", code: 1, userInfo: [NSLocalizedDescriptionKey: "Este dispositivo no tiene linterna"])
+        return
+      }
+      do {
+        try device.lockForConfiguration()
+        device.torchMode = on ? .on : .off
+        device.unlockForConfiguration()
+      } catch {
+        swiftError = error
+      }
+    }
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+      return
+    }
+    if let swiftError = swiftError {
+      reject("CAMERA_ERROR", swiftError.localizedDescription, swiftError)
+      return
+    }
     resolve(nil)
   }
 
