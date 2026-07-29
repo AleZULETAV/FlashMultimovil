@@ -1,0 +1,147 @@
+import Foundation
+import MultipeerConnectivity
+import React
+
+/// Debe tener 15 caracteres o menos (límite de Apple para nombres de servicio Bonjour)
+/// y coincidir con NSBonjourServices en Info.plist.
+private let serviceType = "flashmulti"
+
+/// Puente nativo hacia MultipeerConnectivity: descubre peers cercanos, se conecta,
+/// y envía/recibe los mensajes de coordinación (src/protocol/messages.ts).
+/// Ver sección 5.1 y 6 de docs/proyecto_flash_multimovil.md.
+///
+/// Todos los dispositivos anuncian Y buscan al mismo tiempo con el mismo serviceType;
+/// la distinción "madre"/"remoto" es solo a nivel de la app (mensajes), no de esta capa.
+///
+/// Todo el cuerpo de cada método está envuelto en PNTryCatch (ver TryCatch.h/.m) porque
+/// Swift no puede atrapar NSException con do/catch — sin esto, cualquier excepción de
+/// Objective-C (incluidas las que lanzan frameworks de Apple como MultipeerConnectivity)
+/// tumba todo el proceso en vez de poder reportarse a JS como un rechazo normal.
+@objc(PeerNetworkModule)
+class PeerNetworkModule: RCTEventEmitter {
+
+  private var peerID: MCPeerID?
+  private var session: MCSession?
+  private var advertiser: MCNearbyServiceAdvertiser?
+  private var browser: MCNearbyServiceBrowser?
+
+  @objc(startSession:resolver:rejecter:)
+  func startSession(_ displayName: String, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
+    let caught = PNTryCatch {
+      let id = MCPeerID(displayName: displayName)
+      let newSession = MCSession(peer: id, securityIdentity: nil, encryptionPreference: .required)
+      newSession.delegate = self
+
+      let newAdvertiser = MCNearbyServiceAdvertiser(peer: id, discoveryInfo: nil, serviceType: serviceType)
+      newAdvertiser.delegate = self
+
+      let newBrowser = MCNearbyServiceBrowser(peer: id, serviceType: serviceType)
+      newBrowser.delegate = self
+
+      self.peerID = id
+      self.session = newSession
+      self.advertiser = newAdvertiser
+      self.browser = newBrowser
+
+      newAdvertiser.startAdvertisingPeer()
+      newBrowser.startBrowsingForPeers()
+    }
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+      return
+    }
+    resolve(nil)
+  }
+
+  @objc(broadcast:resolver:rejecter:)
+  func broadcast(_ messageJson: String, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
+    let caught = PNTryCatch {
+      guard let session = self.session, let data = messageJson.data(using: .utf8), !session.connectedPeers.isEmpty else {
+        return
+      }
+      try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
+    }
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+      return
+    }
+    resolve(nil)
+  }
+
+  @objc(stopSession:rejecter:)
+  func stopSession(_ resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
+    let caught = PNTryCatch {
+      self.advertiser?.stopAdvertisingPeer()
+      self.browser?.stopBrowsingForPeers()
+      self.session?.disconnect()
+    }
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+      return
+    }
+    resolve(nil)
+  }
+
+  override func supportedEvents() -> [String]! {
+    return ["onPeerMessage", "onPeerConnected", "onPeerDisconnected"]
+  }
+
+  @objc override func addListener(_ eventName: String) {
+    super.addListener(eventName)
+  }
+
+  @objc override func removeListeners(_ count: Double) {
+    super.removeListeners(count)
+  }
+
+  override static func requiresMainQueueSetup() -> Bool {
+    return true
+  }
+}
+
+extension PeerNetworkModule: MCSessionDelegate {
+  func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
+    switch state {
+    case .connected:
+      sendEvent(withName: "onPeerConnected", body: ["peerId": peerID.displayName])
+    case .notConnected:
+      sendEvent(withName: "onPeerDisconnected", body: ["peerId": peerID.displayName])
+    default:
+      break
+    }
+  }
+
+  func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
+    if let json = String(data: data, encoding: .utf8) {
+      sendEvent(withName: "onPeerMessage", body: json)
+    }
+  }
+
+  // Requeridos por el protocolo, no los usamos por ahora.
+  func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {}
+  func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {}
+  func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {}
+}
+
+extension PeerNetworkModule: MCNearbyServiceAdvertiserDelegate {
+  func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
+    invitationHandler(true, session)
+  }
+
+  func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
+    NSLog("PeerNetworkModule: didNotStartAdvertisingPeer: \(error.localizedDescription)")
+  }
+}
+
+extension PeerNetworkModule: MCNearbyServiceBrowserDelegate {
+  func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String: String]?) {
+    guard let session = session else { return }
+    browser.invitePeer(peerID, to: session, withContext: nil, timeout: 15)
+  }
+
+  func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {}
+
+  func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
+    NSLog("PeerNetworkModule: didNotStartBrowsingForPeers: \(error.localizedDescription)")
+  }
+}
