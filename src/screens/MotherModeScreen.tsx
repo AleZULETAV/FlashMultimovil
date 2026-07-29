@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
-import PeerNetwork from '../native/PeerNetwork';
+import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
 import type { TriggerMessage } from '../protocol/messages';
 
 /**
@@ -8,17 +8,23 @@ import type { TriggerMessage } from '../protocol/messages';
  * Por ahora "disparar" solo manda un TriggerMessage de prueba, sin tocar la cámara todavía.
  */
 export default function MotherModeScreen(): React.JSX.Element {
-  const [connectedPeers] = useState<string[]>([]);
-  const [sessionError] = useState<string | null>(null);
+  const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    // PRUEBA DE AISLAMIENTO FINAL: ninguna llamada al módulo nativo en absoluto,
-    // ni siquiera startSession. Si esto también crashea, el problema nunca tuvo
-    // que ver con PeerNetworkModule ni con MultipeerConnectivity.
-    // PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
+    PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
+
+    const onConnected = peerNetworkEvents?.addListener('onPeerConnected', (e: { peerId: string }) => {
+      setConnectedPeers((prev) => Array.from(new Set([...prev, e.peerId])));
+    });
+    const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', (e: { peerId: string }) => {
+      setConnectedPeers((prev) => prev.filter((id) => id !== e.peerId));
+    });
 
     return () => {
-      // PeerNetwork.stopSession();
+      onConnected?.remove();
+      onDisconnected?.remove();
+      PeerNetwork.stopSession();
     };
   }, []);
 
@@ -30,7 +36,7 @@ export default function MotherModeScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modo: móvil madre</Text>
-      {sessionError && <Text style={{ color: 'red' }} selectable>Error: {sessionError}</Text>}
+      {sessionError && <Text style={styles.error} selectable>Error: {sessionError}</Text>}
       <Text>
         Peers conectados: {connectedPeers.length === 0 ? 'ninguno todavía' : connectedPeers.join(', ')}
       </Text>
@@ -40,6 +46,7 @@ export default function MotherModeScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  title: { fontSize: 20, fontWeight: 'bold' },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#fff' },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#000' },
+  error: { color: 'red' },
 });

@@ -14,11 +14,11 @@ interface PeerNetworkNativeModule {
   stopSession(): Promise<void>;
 }
 
-const { PeerNetwork } = NativeModules as { PeerNetwork?: PeerNetworkNativeModule };
+const { PeerNetworkModule: PeerNetwork } = NativeModules as { PeerNetworkModule?: PeerNetworkNativeModule };
 
 /** Emite el evento 'onPeerMessage' con el JSON recibido; parsear a CoordinationMessage. */
 export const peerNetworkEvents = PeerNetwork
-  ? new NativeEventEmitter(NativeModules.PeerNetwork)
+  ? new NativeEventEmitter(NativeModules.PeerNetworkModule)
   : undefined;
 
 export type { CoordinationMessage };

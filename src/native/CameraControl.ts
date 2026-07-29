@@ -14,8 +14,6 @@ interface CameraControlNativeModule {
   setExposureDuration(durationMs: number): Promise<void>;
 }
 
-// TODO: una vez creado el puente nativo (.swift + .m), NativeModules.CameraControl
-// existirá en runtime. Hasta entonces esto lanza si se llama.
-const { CameraControl } = NativeModules as { CameraControl?: CameraControlNativeModule };
+const { CameraControlModule: CameraControl } = NativeModules as { CameraControlModule?: CameraControlNativeModule };
 
 export default CameraControl as CameraControlNativeModule;
