@@ -29,7 +29,19 @@ export interface DoneMessage {
   type: 'done';
 }
 
-export type CoordinationMessage = TriggerMessage | AckMessage | DoneMessage;
+/** Enviado por el móvil madre para medir la latencia real de la red. */
+export interface PingMessage {
+  type: 'ping';
+  sentAt: number;
+}
+
+/** Respuesta automática de cualquier peer que reciba un ping, con el mismo sentAt. */
+export interface PongMessage {
+  type: 'pong';
+  sentAt: number;
+}
+
+export type CoordinationMessage = TriggerMessage | AckMessage | DoneMessage | PingMessage | PongMessage;
 
 // TODO: decidir formato exacto de reconexión si un peer se desconecta a mitad de sesión
 // (pregunta abierta en la sección 9 del documento de proyecto).

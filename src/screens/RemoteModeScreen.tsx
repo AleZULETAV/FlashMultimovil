@@ -32,6 +32,11 @@ export default function RemoteModeScreen(): React.JSX.Element {
         return;
       }
 
+      if (message.type === 'ping') {
+        PeerNetwork.broadcast(JSON.stringify({ type: 'pong', sentAt: message.sentAt }));
+        return;
+      }
+
       if (message.type === 'trigger' && message.mode === 'torch') {
         if (torchTimeoutRef.current) clearTimeout(torchTimeoutRef.current);
         try {

@@ -16,6 +16,9 @@
 		CD2E083B7C0C2E549A0BF8D5 /* PeerNetworkModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4431BEF28668FF3F73D901C8 /* PeerNetworkModule.swift */; };
 		F32289756F3A518CE4CBB767 /* PeerNetworkModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D28257A33A41FA7E5FE4E01 /* PeerNetworkModule.m */; };
 		5F93D56D801BC3CC29333E81 /* TryCatch.m in Sources */ = {isa = PBXBuildFile; fileRef = 44FF2F924A2D7550CF31881C /* TryCatch.m */; };
+		A926F813794BA536482D5857 /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FA29A476EF85D191B847C1 /* CameraPreviewView.swift */; };
+		AB27E0DB1CD18B17EBFFA54C /* CameraPreviewViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F114F0136095EB3CD14BFA /* CameraPreviewViewManager.swift */; };
+		530940475230FC5CFF4198EB /* CameraPreviewViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 7CDABE13631C6AAE1D0C8DDE /* CameraPreviewViewManager.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +39,9 @@
 		0F6AD0388BA87E62DB72CCFA /* TryCatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = TryCatch.h; path = FlashMultimovil/NativeModules/TryCatch.h; sourceTree = "<group>"; };
 		44FF2F924A2D7550CF31881C /* TryCatch.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = TryCatch.m; path = FlashMultimovil/NativeModules/TryCatch.m; sourceTree = "<group>"; };
 		243EE6339509A842378A77E9 /* FlashMultimovil-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "FlashMultimovil-Bridging-Header.h"; path = "FlashMultimovil/FlashMultimovil-Bridging-Header.h"; sourceTree = "<group>"; };
+		88FA29A476EF85D191B847C1 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraPreviewView.swift; path = FlashMultimovil/NativeModules/CameraPreviewView.swift; sourceTree = "<group>"; };
+		E8F114F0136095EB3CD14BFA /* CameraPreviewViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraPreviewViewManager.swift; path = FlashMultimovil/NativeModules/CameraPreviewViewManager.swift; sourceTree = "<group>"; };
+		7CDABE13631C6AAE1D0C8DDE /* CameraPreviewViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = CameraPreviewViewManager.m; path = FlashMultimovil/NativeModules/CameraPreviewViewManager.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +79,9 @@
 				2D28257A33A41FA7E5FE4E01 /* PeerNetworkModule.m */,
 				0F6AD0388BA87E62DB72CCFA /* TryCatch.h */,
 				44FF2F924A2D7550CF31881C /* TryCatch.m */,
+				88FA29A476EF85D191B847C1 /* CameraPreviewView.swift */,
+				E8F114F0136095EB3CD14BFA /* CameraPreviewViewManager.swift */,
+				7CDABE13631C6AAE1D0C8DDE /* CameraPreviewViewManager.m */,
 			);
 			name = NativeModules;
 			sourceTree = "<group>";
@@ -277,6 +286,9 @@
 				CD2E083B7C0C2E549A0BF8D5 /* PeerNetworkModule.swift in Sources */,
 				F32289756F3A518CE4CBB767 /* PeerNetworkModule.m in Sources */,
 				5F93D56D801BC3CC29333E81 /* TryCatch.m in Sources */,
+				A926F813794BA536482D5857 /* CameraPreviewView.swift in Sources */,
+				AB27E0DB1CD18B17EBFFA54C /* CameraPreviewViewManager.swift in Sources */,
+				530940475230FC5CFF4198EB /* CameraPreviewViewManager.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
