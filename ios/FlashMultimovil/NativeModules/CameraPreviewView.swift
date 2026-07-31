@@ -1,12 +1,11 @@
 import UIKit
 import AVFoundation
 
-/// Vista nativa que muestra el feed en vivo de la cámara (sin capturar fotos todavía).
+/// Vista nativa que muestra el feed en vivo de la cámara, usando la sesión
+/// compartida de CameraSessionManager (la misma que usa la captura de fotos real).
 /// Ver sección "Visor de cámara" del roadmap en docs/proyecto_flash_multimovil.md.
 class CameraPreviewView: UIView {
-  private let session = AVCaptureSession()
   private var previewLayer: AVCaptureVideoPreviewLayer?
-  private let sessionQueue = DispatchQueue(label: "CameraPreviewView.sessionQueue")
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -23,11 +22,11 @@ class CameraPreviewView: UIView {
   private func checkPermissionAndSetup() {
     switch AVCaptureDevice.authorizationStatus(for: .video) {
     case .authorized:
-      setupSession()
+      setupPreview()
     case .notDetermined:
       AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
         if granted {
-          self?.setupSession()
+          self?.setupPreview()
         }
       }
     default:
@@ -37,40 +36,19 @@ class CameraPreviewView: UIView {
     }
   }
 
-  private func setupSession() {
-    sessionQueue.async { [weak self] in
-      guard let self = self else { return }
-      self.session.beginConfiguration()
-      self.session.sessionPreset = .high
-
-      guard
-        let device = AVCaptureDevice.default(for: .video),
-        let input = try? AVCaptureDeviceInput(device: device),
-        self.session.canAddInput(input)
-      else {
-        self.session.commitConfiguration()
-        return
-      }
-      self.session.addInput(input)
-      self.session.commitConfiguration()
-      self.session.startRunning()
-
-      DispatchQueue.main.async {
-        let layer = AVCaptureVideoPreviewLayer(session: self.session)
-        layer.videoGravity = .resizeAspectFill
-        layer.frame = self.bounds
-        self.layer.addSublayer(layer)
-        self.previewLayer = layer
-      }
+  private func setupPreview() {
+    CameraSessionManager.shared.configureIfNeeded { [weak self] success in
+      guard let self = self, success else { return }
+      let layer = AVCaptureVideoPreviewLayer(session: CameraSessionManager.shared.session)
+      layer.videoGravity = .resizeAspectFill
+      layer.frame = self.bounds
+      self.layer.addSublayer(layer)
+      self.previewLayer = layer
     }
   }
 
   override func layoutSubviews() {
     super.layoutSubviews()
     previewLayer?.frame = bounds
-  }
-
-  deinit {
-    session.stopRunning()
   }
 }

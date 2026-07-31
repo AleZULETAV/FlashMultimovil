@@ -129,7 +129,7 @@ Estrategia propuesta por el usuario (documento "Estrategia de Desarrollo sin Mac
 - [x] Implementar control de torch remoto: al recibir un mensaje, el iPhone 13 enciende/apaga su linterna. Funcionando.
 - [x] Medir la latencia real de red: implementado un ping/pong con 5 intentos — confirmado con datos reales (promedio 51ms, peor caso 86ms, ventana sugerida 200ms, bastante mejor que los 400ms estimados a ojo al principio).
 - [x] Primer visor de cámara en vivo (sin capturar fotos todavía), usando un View Manager nativo (`CameraPreviewView`/`CameraPreviewViewManager`) — funcionando y confirmado visualmente en el iPhone 12.
-- [ ] Capturar una foto real (no solo el visor) desde el móvil madre.
+- [x] Capturar una foto real (no solo el visor) desde el móvil madre — con `AVCapturePhotoOutput` sobre una sesión de cámara compartida con el visor (`CameraSessionManager`), guardada en un archivo temporal y mostrada en pantalla para revisarla.
 - [x] Implementar exposición manual extendida en el iPhone 12 usando `setExposureModeCustom` — botón de prueba en la pantalla madre, recorta automáticamente la duración pedida a lo que el hardware soporta.
 - [ ] Primera prueba de campo end-to-end: móvil madre dispara, remoto enciende linterna dentro de la ventana, se revisa la foto resultante.
 - [ ] Explorar la variante de "flash real dentro de la ventana" una vez que la variante de linterna funcione de forma confiable.

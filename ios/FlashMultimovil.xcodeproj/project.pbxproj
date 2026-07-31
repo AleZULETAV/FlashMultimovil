@@ -19,6 +19,9 @@
 		A926F813794BA536482D5857 /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FA29A476EF85D191B847C1 /* CameraPreviewView.swift */; };
 		AB27E0DB1CD18B17EBFFA54C /* CameraPreviewViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F114F0136095EB3CD14BFA /* CameraPreviewViewManager.swift */; };
 		530940475230FC5CFF4198EB /* CameraPreviewViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 7CDABE13631C6AAE1D0C8DDE /* CameraPreviewViewManager.m */; };
+		459D3022677DE431367855CD /* CameraSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958510E20617B8275EDBCDB1 /* CameraSessionManager.swift */; };
+		94F93894103E0651D93850DE /* CameraCaptureModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B1921A964BE3EE478EA5F12 /* CameraCaptureModule.swift */; };
+		46B5D17104A59A6181A5FC83 /* CameraCaptureModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F8031EB49FB09168C102C09 /* CameraCaptureModule.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +45,9 @@
 		88FA29A476EF85D191B847C1 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraPreviewView.swift; path = FlashMultimovil/NativeModules/CameraPreviewView.swift; sourceTree = "<group>"; };
 		E8F114F0136095EB3CD14BFA /* CameraPreviewViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraPreviewViewManager.swift; path = FlashMultimovil/NativeModules/CameraPreviewViewManager.swift; sourceTree = "<group>"; };
 		7CDABE13631C6AAE1D0C8DDE /* CameraPreviewViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = CameraPreviewViewManager.m; path = FlashMultimovil/NativeModules/CameraPreviewViewManager.m; sourceTree = "<group>"; };
+		958510E20617B8275EDBCDB1 /* CameraSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraSessionManager.swift; path = FlashMultimovil/NativeModules/CameraSessionManager.swift; sourceTree = "<group>"; };
+		5B1921A964BE3EE478EA5F12 /* CameraCaptureModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraCaptureModule.swift; path = FlashMultimovil/NativeModules/CameraCaptureModule.swift; sourceTree = "<group>"; };
+		9F8031EB49FB09168C102C09 /* CameraCaptureModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = CameraCaptureModule.m; path = FlashMultimovil/NativeModules/CameraCaptureModule.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +88,9 @@
 				88FA29A476EF85D191B847C1 /* CameraPreviewView.swift */,
 				E8F114F0136095EB3CD14BFA /* CameraPreviewViewManager.swift */,
 				7CDABE13631C6AAE1D0C8DDE /* CameraPreviewViewManager.m */,
+				958510E20617B8275EDBCDB1 /* CameraSessionManager.swift */,
+				5B1921A964BE3EE478EA5F12 /* CameraCaptureModule.swift */,
+				9F8031EB49FB09168C102C09 /* CameraCaptureModule.m */,
 			);
 			name = NativeModules;
 			sourceTree = "<group>";
@@ -289,6 +298,9 @@
 				A926F813794BA536482D5857 /* CameraPreviewView.swift in Sources */,
 				AB27E0DB1CD18B17EBFFA54C /* CameraPreviewViewManager.swift in Sources */,
 				530940475230FC5CFF4198EB /* CameraPreviewViewManager.m in Sources */,
+				459D3022677DE431367855CD /* CameraSessionManager.swift in Sources */,
+				94F93894103E0651D93850DE /* CameraCaptureModule.swift in Sources */,
+				46B5D17104A59A6181A5FC83 /* CameraCaptureModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

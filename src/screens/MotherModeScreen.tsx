@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView, Image } from 'react-native';
 import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
 import CameraPreview from '../native/CameraPreview';
 import CameraControl from '../native/CameraControl';
+import CameraCapture from '../native/CameraCapture';
 import type { CoordinationMessage, TriggerMessage } from '../protocol/messages';
 
-const DEFAULT_EXPOSURE_MS = 200;
+const MAX_EXPOSURE_MS = 500;
+const EXPOSURE_PRESETS_MS = [100, 200, 300, 500];
 
 const PING_COUNT = 5;
 const PING_TIMEOUT_MS = 3000;
@@ -46,6 +48,9 @@ export default function MotherModeScreen(): React.JSX.Element {
   const [midiendo, setMidiendo] = useState(false);
   const [latencias, setLatencias] = useState<number[] | null>(null);
   const [exposureResult, setExposureResult] = useState<string | null>(null);
+  const [photoPath, setPhotoPath] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [tomandoFoto, setTomandoFoto] = useState(false);
 
   useEffect(() => {
     PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
@@ -90,15 +95,24 @@ export default function MotherModeScreen(): React.JSX.Element {
   const maximo = latencias && latencias.length > 0 ? Math.max(...latencias) : null;
   const ventanaSugerida = maximo !== null ? Math.ceil((maximo * 2) / 50) * 50 : null;
 
-  const probarExposicion = () => {
-    const objetivo = ventanaSugerida ?? DEFAULT_EXPOSURE_MS;
-    CameraControl.setExposureDuration(objetivo)
-      .then((r) => setExposureResult(`Aplicado: ${r.appliedDurationMs.toFixed(1)} ms (pedido: ${objetivo} ms)`))
+  const probarExposicion = (objetivo: number) => {
+    const limitado = Math.min(objetivo, MAX_EXPOSURE_MS);
+    CameraControl.setExposureDuration(limitado)
+      .then((r) => setExposureResult(`Aplicado: ${r.appliedDurationMs.toFixed(1)} ms (pedido: ${limitado} ms)`))
       .catch((e: Error) => setExposureResult(`Error: ${String(e?.message ?? e)}`));
   };
 
+  const tomarFoto = () => {
+    setTomandoFoto(true);
+    setPhotoError(null);
+    CameraCapture.takePhoto()
+      .then((r) => setPhotoPath(r.path))
+      .catch((e: Error) => setPhotoError(String(e?.message ?? e)))
+      .finally(() => setTomandoFoto(false));
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Modo: móvil madre</Text>
       <CameraPreview style={styles.preview} />
       {sessionError && <Text style={styles.error} selectable>Error: {sessionError}</Text>}
@@ -119,18 +133,36 @@ export default function MotherModeScreen(): React.JSX.Element {
           <Text>Ida y vuelta: {latencias.join(', ')} ms</Text>
           <Text>Promedio: {promedio} ms — Peor caso: {maximo} ms</Text>
           <Text style={styles.suggestion}>Ventana de seguridad sugerida: {ventanaSugerida} ms</Text>
+          {ventanaSugerida !== null && ventanaSugerida > MAX_EXPOSURE_MS && (
+            <Text style={styles.error}>
+              La red sugiere más margen del recomendado para exposición ({MAX_EXPOSURE_MS}ms máx.) — considera acercar los teléfonos o mejorar la señal.
+            </Text>
+          )}
         </View>
       )}
       {latencias && latencias.length === 0 && <Text style={styles.error}>Ningún ping respondió (timeout)</Text>}
 
       <View style={styles.separator} />
 
-      <Button
-        title={`Probar exposición extendida (${ventanaSugerida ?? DEFAULT_EXPOSURE_MS} ms)`}
-        onPress={probarExposicion}
-      />
+      <Text>Probar exposición extendida (máx. {MAX_EXPOSURE_MS}ms):</Text>
+      <View style={styles.presetRow}>
+        {EXPOSURE_PRESETS_MS.map((ms) => (
+          <Button key={ms} title={`${ms}ms`} onPress={() => probarExposicion(ms)} />
+        ))}
+      </View>
       {exposureResult && <Text selectable>{exposureResult}</Text>}
-    </View>
+
+      <View style={styles.separator} />
+
+      <Button title={tomandoFoto ? 'Tomando foto...' : 'Tomar foto'} onPress={tomarFoto} disabled={tomandoFoto} />
+      {photoError && <Text style={styles.error} selectable>Error: {photoError}</Text>}
+      {photoPath && (
+        <View>
+          <Text>Última foto: {photoPath}</Text>
+          <Image source={{ uri: `file://${photoPath}` }} style={styles.photoPreview} resizeMode="contain" />
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
@@ -141,4 +173,6 @@ const styles = StyleSheet.create({
   error: { color: 'red' },
   separator: { height: 24 },
   suggestion: { fontWeight: 'bold' },
+  presetRow: { flexDirection: 'row', gap: 8 },
+  photoPreview: { width: '100%', height: 300, backgroundColor: '#000', marginTop: 8 },
 });
