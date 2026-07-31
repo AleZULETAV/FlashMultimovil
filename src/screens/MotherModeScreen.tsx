@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
 import CameraPreview from '../native/CameraPreview';
+import CameraControl from '../native/CameraControl';
 import type { CoordinationMessage, TriggerMessage } from '../protocol/messages';
+
+const DEFAULT_EXPOSURE_MS = 200;
 
 const PING_COUNT = 5;
 const PING_TIMEOUT_MS = 3000;
@@ -42,6 +45,7 @@ export default function MotherModeScreen(): React.JSX.Element {
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [midiendo, setMidiendo] = useState(false);
   const [latencias, setLatencias] = useState<number[] | null>(null);
+  const [exposureResult, setExposureResult] = useState<string | null>(null);
 
   useEffect(() => {
     PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
@@ -86,6 +90,13 @@ export default function MotherModeScreen(): React.JSX.Element {
   const maximo = latencias && latencias.length > 0 ? Math.max(...latencias) : null;
   const ventanaSugerida = maximo !== null ? Math.ceil((maximo * 2) / 50) * 50 : null;
 
+  const probarExposicion = () => {
+    const objetivo = ventanaSugerida ?? DEFAULT_EXPOSURE_MS;
+    CameraControl.setExposureDuration(objetivo)
+      .then((r) => setExposureResult(`Aplicado: ${r.appliedDurationMs.toFixed(1)} ms (pedido: ${objetivo} ms)`))
+      .catch((e: Error) => setExposureResult(`Error: ${String(e?.message ?? e)}`));
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modo: móvil madre</Text>
@@ -111,6 +122,14 @@ export default function MotherModeScreen(): React.JSX.Element {
         </View>
       )}
       {latencias && latencias.length === 0 && <Text style={styles.error}>Ningún ping respondió (timeout)</Text>}
+
+      <View style={styles.separator} />
+
+      <Button
+        title={`Probar exposición extendida (${ventanaSugerida ?? DEFAULT_EXPOSURE_MS} ms)`}
+        onPress={probarExposicion}
+      />
+      {exposureResult && <Text selectable>{exposureResult}</Text>}
     </View>
   );
 }

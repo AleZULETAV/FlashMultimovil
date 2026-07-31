@@ -127,9 +127,10 @@ Estrategia propuesta por el usuario (documento "Estrategia de Desarrollo sin Mac
 - [x] Prueba de despliegue: instalar el ejecutable base vía `Sideloadly` en el iPhone 12 y el iPhone 13.
 - [x] Implementar sesión `MultipeerConnectivity` mínima: el iPhone 12 y el iPhone 13 se descubren, conectan y mandan mensajes de prueba. Funcionando de forma confiable.
 - [x] Implementar control de torch remoto: al recibir un mensaje, el iPhone 13 enciende/apaga su linterna. Funcionando.
-- [x] Medir la latencia real de red entre ambos dispositivos: implementado un ping/pong con 5 intentos que calcula ida-y-vuelta promedio/peor caso y sugiere una ventana de seguridad (sección "Medir latencia" en la pantalla madre).
-- [x] Primer visor de cámara en vivo (sin capturar fotos todavía), usando un View Manager nativo (`CameraPreviewView`/`CameraPreviewViewManager`) — visible en la pantalla madre.
-- [ ] Implementar exposición manual extendida en el iPhone 12 usando `setExposureModeCustom`.
+- [x] Medir la latencia real de red: implementado un ping/pong con 5 intentos — confirmado con datos reales (promedio 51ms, peor caso 86ms, ventana sugerida 200ms, bastante mejor que los 400ms estimados a ojo al principio).
+- [x] Primer visor de cámara en vivo (sin capturar fotos todavía), usando un View Manager nativo (`CameraPreviewView`/`CameraPreviewViewManager`) — funcionando y confirmado visualmente en el iPhone 12.
+- [ ] Capturar una foto real (no solo el visor) desde el móvil madre.
+- [x] Implementar exposición manual extendida en el iPhone 12 usando `setExposureModeCustom` — botón de prueba en la pantalla madre, recorta automáticamente la duración pedida a lo que el hardware soporta.
 - [ ] Primera prueba de campo end-to-end: móvil madre dispara, remoto enciende linterna dentro de la ventana, se revisa la foto resultante.
 - [ ] Explorar la variante de "flash real dentro de la ventana" una vez que la variante de linterna funcione de forma confiable.
 - [ ] Diseño visual: interfaz estilo Y2K/Sony Cybershot (ver sección 11).
@@ -147,7 +148,8 @@ Estrategia propuesta por el usuario (documento "Estrategia de Desarrollo sin Mac
 - ¿Swift nativo o React Native/Flutter con puente nativo? **Resuelto**: React Native + módulos nativos en Swift (puente clásico vía `RCT_EXTERN_MODULE`, no Turbo Modules "nativos").
 - ¿El repositorio del proyecto puede ser público? **Resuelto**: sí, es público.
 - **Lección aprendida sobre `RCT_EXTERN_MODULE`**: cuando la clase Swift hereda de una clase concreta de React (`RCTEventEmitter`, `RCTViewManager`, etc.), la superclase declarada en `RCT_EXTERN_MODULE(Nombre, Superclase)` del archivo `.m` debe ser **`NSObject`**, nunca la superclase real — usar la superclase real ahí provoca un choque de propiedades duplicadas en tiempo de ejecución (crash instantáneo, sin mensaje claro). Ya aplicado en `PeerNetworkModule.m` y `CameraPreviewViewManager.m`.
-- **Lección aprendida sobre nombres de módulos**: React Native NO recorta automáticamente el sufijo "Module" del nombre de la clase al registrar el módulo hacia JS — si la clase se llama `PeerNetworkModule`, hay que buscarlo en JS como `NativeModules.PeerNetworkModule`, no `NativeModules.PeerNetwork`. Nos costó varias rondas de depuración no saber esto.
+- **Lección aprendida sobre nombres de módulos**: React Native NO recorta automáticamente el sufijo "Module" del nombre de la clase al registrar un **módulo normal** hacia JS — si la clase se llama `PeerNetworkModule`, hay que buscarlo en JS como `NativeModules.PeerNetworkModule`, no `NativeModules.PeerNetwork`. Nos costó varias rondas de depuración no saber esto.
+- **Lección aprendida sobre nombres de View Managers (la regla contraria)**: para los **View Managers** (componentes de vista nativos, como `CameraPreviewView`), React Native sí recorta automáticamente el sufijo "Manager" al exponerlos a JS. `CameraPreviewViewManager` (la clase) se busca desde JS como `requireNativeComponent('CameraPreviewView')`, sin "Manager" — justo lo opuesto a la regla de los módulos normales. Mismo tipo de error (silencioso al principio, después un crash con exactamente el mismo aspecto genérico que cualquier excepción de JS no atrapada), causa distinta.
 
 ## 11. Diseño visual (nueva sección)
 

@@ -72,8 +72,65 @@ class CameraControlModule: NSObject {
 
   @objc(setExposureDuration:resolver:rejecter:)
   func setExposureDuration(_ durationMs: NSNumber, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
-    // TODO
-    resolve(nil)
+    func applyExposure() {
+      guard let device = AVCaptureDevice.default(for: .video) else {
+        reject("CAMERA_ERROR", "No se encontró la cámara", nil)
+        return
+      }
+      guard device.isExposureModeSupported(.custom) else {
+        reject("CAMERA_ERROR", "Este dispositivo no soporta exposición manual personalizada", nil)
+        return
+      }
+
+      // La duración pedida se recorta a lo que el hardware realmente soporta
+      // (activeFormat.min/maxExposureDuration) — pedir un valor fuera de rango
+      // lanza una excepción nativa en vez de simplemente ignorarse.
+      let requestedSeconds = durationMs.doubleValue / 1000.0
+      let minSeconds = CMTimeGetSeconds(device.activeFormat.minExposureDuration)
+      let maxSeconds = CMTimeGetSeconds(device.activeFormat.maxExposureDuration)
+      let clampedSeconds = max(minSeconds, min(maxSeconds, requestedSeconds))
+      let duration = CMTimeMakeWithSeconds(clampedSeconds, preferredTimescale: 1_000_000)
+
+      var swiftError: Error?
+      let caught = PNTryCatch {
+        do {
+          try device.lockForConfiguration()
+          device.setExposureModeCustom(duration: duration, iso: AVCaptureDevice.currentISO) { _ in
+            device.unlockForConfiguration()
+            DispatchQueue.main.async {
+              resolve(["appliedDurationMs": clampedSeconds * 1000])
+            }
+          }
+        } catch {
+          swiftError = error
+        }
+      }
+      if let caught = caught {
+        reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+        return
+      }
+      if let swiftError = swiftError {
+        reject("CAMERA_ERROR", swiftError.localizedDescription, swiftError)
+      }
+      // Si no hubo excepción ni error, resolve(...) ya se llama dentro del completion handler de arriba.
+    }
+
+    switch AVCaptureDevice.authorizationStatus(for: .video) {
+    case .authorized:
+      applyExposure()
+    case .notDetermined:
+      AVCaptureDevice.requestAccess(for: .video) { granted in
+        DispatchQueue.main.async {
+          if granted {
+            applyExposure()
+          } else {
+            reject("CAMERA_PERMISSION_DENIED", "El usuario no dio permiso de cámara", nil)
+          }
+        }
+      }
+    default:
+      reject("CAMERA_PERMISSION_DENIED", "Permiso de cámara denegado o restringido. Ve a Ajustes > Privacidad y seguridad > Cámara.", nil)
+    }
   }
 
   @objc static func requiresMainQueueSetup() -> Bool {
