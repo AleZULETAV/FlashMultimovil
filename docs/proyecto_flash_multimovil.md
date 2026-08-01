@@ -132,7 +132,7 @@ Estrategia propuesta por el usuario (documento "Estrategia de Desarrollo sin Mac
 - [x] Capturar una foto real (no solo el visor) desde el móvil madre — con `AVCapturePhotoOutput` sobre una sesión de cámara compartida con el visor (`CameraSessionManager`), guardada en un archivo temporal y mostrada en pantalla para revisarla.
 - [x] Implementar exposición manual extendida en el iPhone 12 usando `setExposureModeCustom` — botón de prueba en la pantalla madre, recorta automáticamente la duración pedida a lo que el hardware soporta.
 - [ ] Primera prueba de campo end-to-end: móvil madre dispara, remoto enciende linterna dentro de la ventana, se revisa la foto resultante.
-- [ ] Explorar la variante de "flash real dentro de la ventana" una vez que la variante de linterna funcione de forma confiable.
+- [ ] Explorar la variante de "flash real dentro de la ventana" una vez que la variante de linterna funcione de forma confiable. **Completado**: `fireFlashPulse` dispara una captura "de usar y tirar" con `flashMode = .on` (el flash real de iOS solo se puede disparar así, no con un interruptor manual como la linterna). Probado desde la pantalla madre con un botón "Disparar (flash real)" separado del de linterna.
 - [ ] Diseño visual: interfaz estilo Y2K/Sony Cybershot (ver sección 11).
 - [ ] Soporte Android + redes mixtas iOS/Android (ver sección 9, decisión pospuesta a propósito).
 

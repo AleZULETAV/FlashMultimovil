@@ -69,8 +69,8 @@ export default function MotherModeScreen(): React.JSX.Element {
     };
   }, []);
 
-  const disparar = () => {
-    const message: TriggerMessage = { type: 'trigger', delayMs: 300, windowMs: 400, mode: 'torch' };
+  const disparar = (modo: 'torch' | 'flash') => {
+    const message: TriggerMessage = { type: 'trigger', delayMs: 300, windowMs: 400, mode: modo };
     PeerNetwork.broadcast(JSON.stringify(message));
   };
 
@@ -119,7 +119,8 @@ export default function MotherModeScreen(): React.JSX.Element {
       <Text>
         Peers conectados: {connectedPeers.length === 0 ? 'ninguno todavía' : connectedPeers.join(', ')}
       </Text>
-      <Button title="Disparar (mensaje de prueba)" onPress={disparar} />
+      <Button title="Disparar (linterna)" onPress={() => disparar('torch')} />
+      <Button title="Disparar (flash real)" onPress={() => disparar('flash')} />
 
       <View style={styles.separator} />
 
@@ -157,7 +158,7 @@ export default function MotherModeScreen(): React.JSX.Element {
       <Button title={tomandoFoto ? 'Tomando foto...' : 'Tomar foto'} onPress={tomarFoto} disabled={tomandoFoto} />
       {photoError && <Text style={styles.error} selectable>Error: {photoError}</Text>}
       {photoPath && (
-        <View>
+        <View style={styles.photoContainer}>
           <Text>Última foto: {photoPath}</Text>
           <Image source={{ uri: `file://${photoPath}` }} style={styles.photoPreview} resizeMode="contain" />
         </View>
@@ -175,4 +176,5 @@ const styles = StyleSheet.create({
   suggestion: { fontWeight: 'bold' },
   presetRow: { flexDirection: 'row', gap: 8 },
   photoPreview: { width: '100%', height: 300, backgroundColor: '#000', marginTop: 8 },
+  photoContainer: { width: '100%', alignItems: 'center' },
 });

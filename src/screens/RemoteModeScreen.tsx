@@ -14,6 +14,7 @@ export default function RemoteModeScreen(): React.JSX.Element {
   const [lastMessage, setLastMessage] = useState<string>('(nada todavía)');
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [torchOn, setTorchOn] = useState(false);
+  const [lastFlash, setLastFlash] = useState<string | null>(null);
   const torchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -34,6 +35,14 @@ export default function RemoteModeScreen(): React.JSX.Element {
 
       if (message.type === 'ping') {
         PeerNetwork.broadcast(JSON.stringify({ type: 'pong', sentAt: message.sentAt }));
+        return;
+      }
+
+      if (message.type === 'trigger' && message.mode === 'flash') {
+        setLastFlash('disparando...');
+        CameraControl.fireFlashPulse()
+          .then(() => setLastFlash(`disparado a las ${new Date().toLocaleTimeString()}`))
+          .catch((e: Error) => setLastFlash(`error: ${String(e?.message ?? e)}`));
         return;
       }
 
@@ -79,6 +88,7 @@ export default function RemoteModeScreen(): React.JSX.Element {
       {sessionError && <Text style={styles.error} selectable>Error: {sessionError}</Text>}
       <Text>{connected ? 'Conectado al móvil madre' : 'Buscando móvil madre...'}</Text>
       <Text>Linterna: {torchOn ? 'ENCENDIDA' : 'apagada'}</Text>
+      <Text>Flash real: {lastFlash ?? '(ninguno todavía)'}</Text>
       <Text>Último mensaje: {lastMessage}</Text>
     </View>
   );

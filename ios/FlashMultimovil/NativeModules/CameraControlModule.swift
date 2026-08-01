@@ -16,6 +16,9 @@ import AVFoundation
 @objc(CameraControlModule)
 class CameraControlModule: NSObject {
 
+  // Hay que retener el delegate mientras dura la captura, o ARC lo libera antes de que responda.
+  private var flashDelegate: FlashPulseDelegate?
+
   @objc(setTorch:resolver:rejecter:)
   func setTorch(_ on: Bool, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
     func applyTorch() {
@@ -66,8 +69,53 @@ class CameraControlModule: NSObject {
 
   @objc(fireFlashPulse:rejecter:)
   func fireFlashPulse(_ resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
-    // TODO
-    resolve(nil)
+    // A diferencia de la linterna (torchMode, un interruptor directo), el flash real de iOS
+    // NO se puede disparar manualmente — solo se activa como parte de una captura de foto
+    // con flashMode = .on. Por eso disparamos una foto "de usar y tirar": no nos importa la
+    // imagen resultante, solo que el hardware del flash se dispare durante la captura.
+    switch AVCaptureDevice.authorizationStatus(for: .video) {
+    case .authorized:
+      doFireFlashPulse(resolve: resolve, reject: reject)
+    case .notDetermined:
+      AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+        DispatchQueue.main.async {
+          if granted {
+            self?.doFireFlashPulse(resolve: resolve, reject: reject)
+          } else {
+            reject("CAMERA_PERMISSION_DENIED", "El usuario no dio permiso de cámara", nil)
+          }
+        }
+      }
+    default:
+      reject("CAMERA_PERMISSION_DENIED", "Permiso de cámara denegado o restringido. Ve a Ajustes > Privacidad y seguridad > Cámara.", nil)
+    }
+  }
+
+  private func doFireFlashPulse(resolve: @escaping (Any?) -> Void, reject: @escaping (String?, String?, Error?) -> Void) {
+    CameraSessionManager.shared.configureIfNeeded { [weak self] success in
+      guard let self = self else { return }
+      guard success else {
+        reject("CAMERA_ERROR", "No se pudo configurar la sesión de cámara", nil)
+        return
+      }
+      guard CameraSessionManager.shared.photoOutput.supportedFlashModes.contains(.on) else {
+        reject("CAMERA_ERROR", "Este dispositivo no tiene flash", nil)
+        return
+      }
+      let settings = AVCapturePhotoSettings()
+      settings.flashMode = .on
+      let delegate = FlashPulseDelegate { result in
+        self.flashDelegate = nil
+        switch result {
+        case .success:
+          resolve(nil)
+        case .failure(let error):
+          reject("CAMERA_ERROR", error.localizedDescription, error)
+        }
+      }
+      self.flashDelegate = delegate
+      CameraSessionManager.shared.photoOutput.capturePhoto(with: settings, delegate: delegate)
+    }
   }
 
   @objc(setExposureDuration:resolver:rejecter:)
@@ -135,5 +183,23 @@ class CameraControlModule: NSObject {
 
   @objc static func requiresMainQueueSetup() -> Bool {
     return true
+  }
+}
+
+/// Delegate mínimo para la captura "de usar y tirar" que dispara el flash real.
+/// No nos importa la imagen resultante, solo saber que la captura (y el flash) terminaron.
+private class FlashPulseDelegate: NSObject, AVCapturePhotoCaptureDelegate {
+  private let completion: (Result<Void, Error>) -> Void
+
+  init(completion: @escaping (Result<Void, Error>) -> Void) {
+    self.completion = completion
+  }
+
+  func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    if let error = error {
+      completion(.failure(error))
+    } else {
+      completion(.success(()))
+    }
   }
 }
