@@ -14,12 +14,12 @@ class CameraCaptureModule: NSObject {
   func takePhoto(_ resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
     switch AVCaptureDevice.authorizationStatus(for: .video) {
     case .authorized:
-      capture(resolve: resolve, reject: reject)
+      capture(resolve: resolve, rejecter: reject)
     case .notDetermined:
       AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
         DispatchQueue.main.async {
           if granted {
-            self?.capture(resolve: resolve, reject: reject)
+            self?.capture(resolve: resolve, rejecter: reject)
           } else {
             reject("CAMERA_PERMISSION_DENIED", "El usuario no dio permiso de cámara", nil)
           }
