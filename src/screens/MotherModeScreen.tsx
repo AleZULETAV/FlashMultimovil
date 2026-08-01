@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
 import CameraPreview from '../native/CameraPreview';
 import CameraControl from '../native/CameraControl';
@@ -8,6 +8,8 @@ import type { CoordinationMessage, TriggerMessage } from '../protocol/messages';
 
 const MAX_EXPOSURE_MS = 500;
 const EXPOSURE_PRESETS_MS = [100, 200, 300, 500];
+const SWEEP_PRESETS_MS = [1000, 2000];
+const COLOR_PRESETS = ['#ff0040', '#00ff88', '#2050ff', '#ffaa00', '#ffffff'];
 
 const PING_COUNT = 5;
 const PING_TIMEOUT_MS = 3000;
@@ -74,6 +76,21 @@ export default function MotherModeScreen(): React.JSX.Element {
     PeerNetwork.broadcast(JSON.stringify(message));
   };
 
+  const dispararColor = (color: string) => {
+    const message: TriggerMessage = { type: 'trigger', delayMs: 300, windowMs: 1500, mode: 'color', color };
+    PeerNetwork.broadcast(JSON.stringify(message));
+  };
+
+  const tomarFotoBarrido = (exposureMs: number) => {
+    setTomandoFoto(true);
+    setPhotoError(null);
+    CameraControl.setExposureDuration(exposureMs)
+      .then(() => CameraCapture.takePhoto())
+      .then((r) => setPhotoPath(r.path))
+      .catch((e: Error) => setPhotoError(String(e?.message ?? e)))
+      .finally(() => setTomandoFoto(false));
+  };
+
   const medirLatencia = async () => {
     setMidiendo(true);
     setLatencias(null);
@@ -122,6 +139,17 @@ export default function MotherModeScreen(): React.JSX.Element {
       <Button title="Disparar (linterna)" onPress={() => disparar('torch')} />
       <Button title="Disparar (flash real)" onPress={() => disparar('flash')} />
 
+      <Text>Luz de color en el remoto:</Text>
+      <View style={styles.presetRow}>
+        {COLOR_PRESETS.map((color) => (
+          <Pressable
+            key={color}
+            onPress={() => dispararColor(color)}
+            style={[styles.colorSwatch, { backgroundColor: color }]}
+          />
+        ))}
+      </View>
+
       <View style={styles.separator} />
 
       <Button
@@ -155,6 +183,15 @@ export default function MotherModeScreen(): React.JSX.Element {
 
       <View style={styles.separator} />
 
+      <Text>Modo barrido (exposición larga + foto en un solo paso):</Text>
+      <View style={styles.presetRow}>
+        {SWEEP_PRESETS_MS.map((ms) => (
+          <Button key={ms} title={`${ms}ms`} onPress={() => tomarFotoBarrido(ms)} disabled={tomandoFoto} />
+        ))}
+      </View>
+
+      <View style={styles.separator} />
+
       <Button title={tomandoFoto ? 'Tomando foto...' : 'Tomar foto'} onPress={tomarFoto} disabled={tomandoFoto} />
       {photoError && <Text style={styles.error} selectable>Error: {photoError}</Text>}
       {photoPath && (
@@ -175,6 +212,7 @@ const styles = StyleSheet.create({
   separator: { height: 24 },
   suggestion: { fontWeight: 'bold' },
   presetRow: { flexDirection: 'row', gap: 8 },
+  colorSwatch: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#ccc' },
   photoPreview: { width: '100%', height: 300, backgroundColor: '#000', marginTop: 8 },
   photoContainer: { width: '100%', alignItems: 'center' },
 });

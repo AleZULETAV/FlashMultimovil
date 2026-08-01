@@ -134,6 +134,8 @@ Estrategia propuesta por el usuario (documento "Estrategia de Desarrollo sin Mac
 - [ ] Primera prueba de campo end-to-end: móvil madre dispara, remoto enciende linterna dentro de la ventana, se revisa la foto resultante.
 - [ ] Explorar la variante de "flash real dentro de la ventana" una vez que la variante de linterna funcione de forma confiable. **Completado**: `fireFlashPulse` dispara una captura "de usar y tirar" con `flashMode = .on` (el flash real de iOS solo se puede disparar así, no con un interruptor manual como la linterna). Probado desde la pantalla madre con un botón "Disparar (flash real)" separado del de linterna.
 - [ ] Diseño visual: interfaz estilo Y2K/Sony Cybershot (ver sección 11).
+- [x] Luz de color desde el remoto: nuevo modo `'color'` en el protocolo, el remoto pinta toda su pantalla del color recibido durante la ventana — sin código nativo, puro React Native.
+- [x] Modo barrido: reutiliza `setExposureDuration` con valores más largos (1-2s) encadenado con `takePhoto`, en un solo botón.
 - [ ] Soporte Android + redes mixtas iOS/Android (ver sección 9, decisión pospuesta a propósito).
 
 ## 9. Preguntas abiertas / decisiones pendientes

@@ -6,7 +6,7 @@
  * (puente nativo: src/native/PeerNetwork.ts -> ios/.../NativeModules/PeerNetworkModule.swift).
  */
 
-export type LightMode = 'torch' | 'flash';
+export type LightMode = 'torch' | 'flash' | 'color';
 
 /** Enviado por el móvil madre a todos los peers conectados. */
 export interface TriggerMessage {
@@ -16,6 +16,8 @@ export interface TriggerMessage {
   /** Duración que debe mantenerse la luz encendida (ventana de seguridad). */
   windowMs: number;
   mode: LightMode;
+  /** Solo se usa cuando mode === 'color'. Color hexadecimal, ej. "#ff0000". */
+  color?: string;
 }
 
 /** Enviado por cada móvil remoto al terminar su parte (encender/disparar luz). */

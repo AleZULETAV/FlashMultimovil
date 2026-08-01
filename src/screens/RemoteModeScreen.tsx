@@ -15,6 +15,8 @@ export default function RemoteModeScreen(): React.JSX.Element {
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [torchOn, setTorchOn] = useState(false);
   const [lastFlash, setLastFlash] = useState<string | null>(null);
+  const [screenColor, setScreenColor] = useState<string | null>(null);
+  const colorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const torchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -35,6 +37,13 @@ export default function RemoteModeScreen(): React.JSX.Element {
 
       if (message.type === 'ping') {
         PeerNetwork.broadcast(JSON.stringify({ type: 'pong', sentAt: message.sentAt }));
+        return;
+      }
+
+      if (message.type === 'trigger' && message.mode === 'color') {
+        if (colorTimeoutRef.current) clearTimeout(colorTimeoutRef.current);
+        setScreenColor(message.color ?? '#ffffff');
+        colorTimeoutRef.current = setTimeout(() => setScreenColor(null), message.windowMs);
         return;
       }
 
@@ -72,6 +81,7 @@ export default function RemoteModeScreen(): React.JSX.Element {
       onDisconnected?.remove();
       onMessage?.remove();
       if (torchTimeoutRef.current) clearTimeout(torchTimeoutRef.current);
+      if (colorTimeoutRef.current) clearTimeout(colorTimeoutRef.current);
       try {
         CameraControl.setTorch(false).catch(() => {});
       } catch {
@@ -80,6 +90,10 @@ export default function RemoteModeScreen(): React.JSX.Element {
       PeerNetwork.stopSession();
     };
   }, []);
+
+  if (screenColor) {
+    return <View style={[styles.fullscreenColor, { backgroundColor: screenColor }]} />;
+  }
 
   return (
     <View style={styles.container}>
@@ -99,4 +113,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: 'bold', color: '#000' },
   debug: { color: '#888', fontSize: 12 },
   error: { color: 'red' },
+  fullscreenColor: { flex: 1 },
 });
