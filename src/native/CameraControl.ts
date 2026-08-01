@@ -12,6 +12,8 @@ interface CameraControlNativeModule {
   fireFlashPulse(): Promise<void>;
   /** Extiende manualmente la duración de exposición del móvil madre. Resuelve con la duración realmente aplicada (puede recortarse a lo que soporte el hardware). */
   setExposureDuration(durationMs: number): Promise<{ appliedDurationMs: number }>;
+  /** Regresa la cámara a exposición automática continua (deja de estar "pegada" al último valor manual probado). */
+  resetToAuto(): Promise<void>;
 }
 
 const { CameraControlModule: CameraControl } = NativeModules as { CameraControlModule?: CameraControlNativeModule };

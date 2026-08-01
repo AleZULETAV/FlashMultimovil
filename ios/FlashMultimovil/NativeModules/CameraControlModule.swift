@@ -181,6 +181,37 @@ class CameraControlModule: NSObject {
     }
   }
 
+  @objc(resetToAuto:rejecter:)
+  func resetToAuto(_ resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
+    guard let device = AVCaptureDevice.default(for: .video) else {
+      reject("CAMERA_ERROR", "No se encontró la cámara", nil)
+      return
+    }
+    guard device.isExposureModeSupported(.continuousAutoExposure) else {
+      reject("CAMERA_ERROR", "Este dispositivo no soporta exposición automática continua", nil)
+      return
+    }
+    var swiftError: Error?
+    let caught = PNTryCatch {
+      do {
+        try device.lockForConfiguration()
+        device.exposureMode = .continuousAutoExposure
+        device.unlockForConfiguration()
+      } catch {
+        swiftError = error
+      }
+    }
+    if let caught = caught {
+      reject("NATIVE_EXCEPTION", "\(caught.name.rawValue): \(caught.reason ?? "sin razón")", nil)
+      return
+    }
+    if let swiftError = swiftError {
+      reject("CAMERA_ERROR", swiftError.localizedDescription, swiftError)
+      return
+    }
+    resolve(nil)
+  }
+
   @objc static func requiresMainQueueSetup() -> Bool {
     return true
   }

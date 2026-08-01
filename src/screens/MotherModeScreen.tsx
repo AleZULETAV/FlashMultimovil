@@ -56,6 +56,7 @@ export default function MotherModeScreen(): React.JSX.Element {
 
   useEffect(() => {
     PeerNetwork.startSession('movil-madre').catch((e: Error) => setSessionError(String(e?.message ?? e)));
+    CameraControl.resetToAuto().catch(() => {});
 
     const onConnected = peerNetworkEvents?.addListener('onPeerConnected', (e: { peerId: string }) => {
       setConnectedPeers((prev) => Array.from(new Set([...prev, e.peerId])));
@@ -88,7 +89,10 @@ export default function MotherModeScreen(): React.JSX.Element {
       .then(() => CameraCapture.takePhoto())
       .then((r) => setPhotoPath(r.path))
       .catch((e: Error) => setPhotoError(String(e?.message ?? e)))
-      .finally(() => setTomandoFoto(false));
+      .finally(() => {
+        setTomandoFoto(false);
+        CameraControl.resetToAuto().catch(() => {});
+      });
   };
 
   const medirLatencia = async () => {
@@ -180,6 +184,7 @@ export default function MotherModeScreen(): React.JSX.Element {
         ))}
       </View>
       {exposureResult && <Text selectable>{exposureResult}</Text>}
+      <Button title="Volver a automático" onPress={() => CameraControl.resetToAuto().then(() => setExposureResult('Vuelto a automático'))} />
 
       <View style={styles.separator} />
 
