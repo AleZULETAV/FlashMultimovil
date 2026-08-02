@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Image, Pressable, StyleSheet, Alert, StatusBar } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Image, Pressable, StyleSheet, Alert, StatusBar, Animated, PanResponder, type GestureResponderEvent } from 'react-native';
+import Sound from 'react-native-sound';
 import CameraPreview from '../native/CameraPreview';
 import CameraControl from '../native/CameraControl';
 import CameraCapture from '../native/CameraCapture';
@@ -30,35 +31,111 @@ const SHUTTER = { left: 28, top: 640, width: 137, height: 137, borderRadius: 68.
 
 // Tamaño y posición de la rueda de modos — edita left/top/width/height aquí.
 const WHEEL = { left: 250, top: 676, width: 115, height: 115 };
+const WHEEL_CENTER = { x: WHEEL.width / 2, y: WHEEL.height / 2 };
 
-// Posición de cada ícono dentro de la rueda, como fracción de su ancho/alto (0 a 1).
-// No hace falta tocar esto al cambiar el tamaño de WHEEL — se recalculan solas.
-const WHEEL_ZONE_RATIO = 0.32; // qué tan grande es cada zona de toque, relativo al ancho de la rueda
-const WHEEL_ZONES: { mode: WheelMode; leftRatio: number; topRatio: number }[] = [
-  { mode: 'flash', leftRatio: 0.336, topRatio: 0 }, // rayo, arriba
-  { mode: 'camera', leftRatio: 0, topRatio: 0.336 }, // cámara, izquierda
-  { mode: 'torch', leftRatio: 0.679, topRatio: 0.336 }, // linterna, derecha
-  { mode: 'sweep', leftRatio: 0.336, topRatio: 0.679 }, // personas en movimiento, abajo
-];
-const wheelZoneSize = WHEEL.width * WHEEL_ZONE_RATIO;
+// Posición angular de cada ícono en la imagen SIN rotar (0° = arriba, aumenta en sentido horario).
+const MODE_ANGLES: Record<WheelMode, number> = { flash: 0, torch: 90, sweep: 180, camera: 270 };
+const DEFAULT_MODE: WheelMode = 'camera';
+
+/** Ángulo (0-360, sentido horario, 0=arriba) del punto (x,y) respecto al centro de la rueda. */
+function angleFromCenter(x: number, y: number): number {
+  const dx = x - WHEEL_CENTER.x;
+  const dy = y - WHEEL_CENTER.y;
+  const raw = (Math.atan2(dx, -dy) * 180) / Math.PI;
+  return ((raw % 360) + 360) % 360;
+}
+
+/** Rotación de la rueda necesaria para que el ícono de ese modo quede arriba, alineado con el indicador fijo. */
+function targetRotationFor(mode: WheelMode): number {
+  return (360 - MODE_ANGLES[mode]) % 360;
+}
+
+/** De todos los modos, cuál queda más cerca de estar arriba dada la rotación actual (puede ser cualquier número, no solo 0-360). */
+function nearestMode(rotationDeg: number): WheelMode {
+  const norm = ((rotationDeg % 360) + 360) % 360;
+  let best: WheelMode = DEFAULT_MODE;
+  let bestDiff = Infinity;
+  (Object.keys(MODE_ANGLES) as WheelMode[]).forEach((m) => {
+    const target = targetRotationFor(m);
+    const diff = Math.min(Math.abs(norm - target), 360 - Math.abs(norm - target));
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = m;
+    }
+  });
+  return best;
+}
 
 export default function MotherShellScreen(): React.JSX.Element {
-  const [mode, setMode] = useState<WheelMode>('camera');
+  const [mode, setMode] = useState<WheelMode>(DEFAULT_MODE);
   const [fullScreen, setFullScreen] = useState(false);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [connected, setConnected] = useState(false);
 
+  const rotation = useRef(new Animated.Value(targetRotationFor(DEFAULT_MODE))).current;
+  const currentRotationRef = useRef(targetRotationFor(DEFAULT_MODE));
+  const lastAngleRef = useRef(0);
+  const soundRef = useRef<Sound | null>(null);
+
   useEffect(() => {
     PeerNetwork.startSession('movil-madre').catch((e: Error) => Alert.alert('Error de red', String(e?.message ?? e)));
     const onConnected = peerNetworkEvents?.addListener('onPeerConnected', () => setConnected(true));
     const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', () => setConnected(false));
+
+    Sound.setCategory('Ambient');
+    soundRef.current = new Sound('wheel_sound.mp3', Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.log('No se pudo cargar wheel_sound.mp3', error);
+      }
+    });
+
     return () => {
       onConnected?.remove();
       onDisconnected?.remove();
       PeerNetwork.stopSession();
+      soundRef.current?.release();
     };
   }, []);
+
+  const playWheelSound = () => {
+    const sound = soundRef.current;
+    if (!sound) return;
+    sound.stop(() => sound.play());
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt: GestureResponderEvent) => {
+        const { locationX, locationY } = evt.nativeEvent;
+        lastAngleRef.current = angleFromCenter(locationX, locationY);
+      },
+      onPanResponderMove: (evt: GestureResponderEvent) => {
+        const { locationX, locationY } = evt.nativeEvent;
+        const newAngle = angleFromCenter(locationX, locationY);
+        let delta = newAngle - lastAngleRef.current;
+        // Camino más corto, evita un salto brusco al cruzar 0°/360°.
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        currentRotationRef.current += delta;
+        rotation.setValue(currentRotationRef.current);
+        lastAngleRef.current = newAngle;
+      },
+      onPanResponderRelease: () => {
+        const selected = nearestMode(currentRotationRef.current);
+        const target = targetRotationFor(selected);
+        // Ajustamos el objetivo a la vuelta más cercana a donde ya estamos (evita "desenrollar" varias vueltas de golpe).
+        const base = Math.round((currentRotationRef.current - target) / 360) * 360;
+        const finalAngle = base + target;
+        currentRotationRef.current = finalAngle;
+        Animated.spring(rotation, { toValue: finalAngle, useNativeDriver: true, friction: 6 }).start();
+        playWheelSound();
+        setMode(selected);
+      },
+    })
+  ).current;
 
   const disparar = async () => {
     if (busy) return;
@@ -94,10 +171,7 @@ export default function MotherShellScreen(): React.JSX.Element {
       <View style={styles.fullScreenContainer}>
         <StatusBar hidden />
         <CameraPreview style={StyleSheet.absoluteFill} />
-        <Pressable
-          style={styles.exitFullScreenButton}
-          onPress={() => setFullScreen(false)}
-        >
+        <Pressable style={styles.exitFullScreenButton} onPress={() => setFullScreen(false)}>
           <View style={styles.exitFullScreenDot} />
         </Pressable>
         <Pressable style={styles.fullScreenShutter} onPress={disparar} />
@@ -110,11 +184,7 @@ export default function MotherShellScreen(): React.JSX.Element {
       <StatusBar hidden />
       <CameraPreview style={[styles.preview, SCREEN_RECT]} />
 
-      <Image
-        source={require('../assets/images/camera_shell.png')}
-        style={styles.shell}
-        resizeMode="stretch"
-      />
+      <Image source={require('../assets/images/camera_shell.png')} style={styles.shell} resizeMode="stretch" />
 
       {/* Botón izquierdo: rollo / laboratorio fotográfico */}
       <Pressable
@@ -141,36 +211,31 @@ export default function MotherShellScreen(): React.JSX.Element {
         disabled={busy}
       />
 
-      {/* Rueda de modos */}
-      <View style={WHEEL} pointerEvents="box-none">
-        <Image
+      {/* Rueda de modos: se arrastra en círculo, encaja en el modo más cercano al soltar. */}
+      <View style={WHEEL} {...panResponder.panHandlers}>
+        <Animated.Image
           source={require('../assets/images/mode_wheel.png')}
-          style={styles.wheelImage}
+          style={[
+            styles.wheelImage,
+            {
+              transform: [
+                {
+                  rotate: rotation.interpolate({
+                    inputRange: [0, 360],
+                    outputRange: ['0deg', '360deg'],
+                    extrapolate: 'extend',
+                  }),
+                },
+              ],
+            },
+          ]}
           resizeMode="contain"
         />
-        {WHEEL_ZONES.map((zone) => (
-          <Pressable
-            key={zone.mode}
-            style={({ pressed }) => [
-              styles.wheelZone,
-              {
-                left: zone.leftRatio * WHEEL.width,
-                top: zone.topRatio * WHEEL.height,
-                width: wheelZoneSize,
-                height: wheelZoneSize,
-                borderRadius: wheelZoneSize / 2,
-              },
-              mode === zone.mode && styles.wheelZoneSelected,
-              pressed && styles.pressed,
-            ]}
-            onPress={() => setMode(zone.mode)}
-          />
-        ))}
+        {/* Indicador fijo: marca cuál ícono está seleccionado (el que quede justo debajo). */}
+        <View style={styles.wheelPointer} />
       </View>
 
-      {photoPath && (
-        <Image source={{ uri: `file://${photoPath}` }} style={styles.lastPhotoThumb} resizeMode="cover" />
-      )}
+      {photoPath && <Image source={{ uri: `file://${photoPath}` }} style={styles.lastPhotoThumb} resizeMode="cover" />}
 
       <View style={[styles.connectionDot, connected ? styles.connectionDotOn : styles.connectionDotOff]} />
     </View>
@@ -185,10 +250,16 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.5 },
   pressedShutter: { opacity: 0.6, transform: [{ scale: 0.96 }] },
   wheelImage: { width: '100%', height: '100%' },
-  wheelZone: {
+  wheelPointer: {
     position: 'absolute',
+    top: -4,
+    left: '50%',
+    marginLeft: -5,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#0f0',
   },
-  wheelZoneSelected: { borderWidth: 2, borderColor: '#0f0' },
   lastPhotoThumb: {
     position: 'absolute',
     left: 8,
