@@ -29,7 +29,7 @@ const DISP_BUTTON = { left: 206, top: 627, width: 38, height: 45 };
 const SHUTTER = { left: 28, top: 640, width: 137, height: 137, borderRadius: 68.5 };
 
 // Tamaño y posición de la rueda de modos — edita left/top/width/height aquí.
-const WHEEL = { left: 248, top: 675, width: 115, height: 115 };
+const WHEEL = { left: 250, top: 676, width: 115, height: 115 };
 
 // Posición de cada ícono dentro de la rueda, como fracción de su ancho/alto (0 a 1).
 // No hace falta tocar esto al cambiar el tamaño de WHEEL — se recalculan solas.
