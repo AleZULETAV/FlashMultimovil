@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, View, Button, Text, ScrollView, StyleSheet } from 'react-native';
 import MotherModeScreen from './screens/MotherModeScreen';
+import MotherShellScreen from './screens/MotherShellScreen';
 import RemoteModeScreen from './screens/RemoteModeScreen';
 
-type Mode = 'unset' | 'mother' | 'remote';
+type Mode = 'unset' | 'mother' | 'mother-debug' | 'remote';
 
 /**
  * Capturador de errores fatales: en vez de dejar que la app truene (SIGABRT),
@@ -40,15 +41,16 @@ export default function App(): React.JSX.Element {
     );
   }
 
-  if (mode === 'mother') return <MotherModeScreen />;
+  if (mode === 'mother') return <MotherShellScreen />;
+  if (mode === 'mother-debug') return <MotherModeScreen />;
   if (mode === 'remote') return <RemoteModeScreen />;
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={{ color: '#888', fontSize: 12 }}>Build: v8-diagnostico</Text>
       <View style={styles.buttons}>
         <Button title="Soy el móvil madre" onPress={() => setMode('mother')} />
         <Button title="Soy un móvil remoto" onPress={() => setMode('remote')} />
+        <Button title="Depurar (móvil madre)" onPress={() => setMode('mother-debug')} />
       </View>
     </SafeAreaView>
   );
