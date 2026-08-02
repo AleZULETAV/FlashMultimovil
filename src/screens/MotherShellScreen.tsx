@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Image, Pressable, StyleSheet, Alert, StatusBar } from 'react-native';
 import CameraPreview from '../native/CameraPreview';
 import CameraControl from '../native/CameraControl';
 import CameraCapture from '../native/CameraCapture';
-import PeerNetwork from '../native/PeerNetwork';
+import PeerNetwork, { peerNetworkEvents } from '../native/PeerNetwork';
 import type { TriggerMessage } from '../protocol/messages';
 
 /**
@@ -27,22 +27,38 @@ const LEFT_BUTTON = { left: 8, top: 627, width: 38, height: 45 };
 const MENU_BUTTON = { left: 156, top: 627, width: 38, height: 45 };
 const DISP_BUTTON = { left: 206, top: 627, width: 38, height: 45 };
 const SHUTTER = { left: 28, top: 640, width: 137, height: 137, borderRadius: 68.5 };
-const WHEEL = { left: 245, top: 675, width: 115, height: 115 };
 
-// Zonas de toque dentro de la rueda (relativas a la esquina superior izquierda de WHEEL)
-const WHEEL_ZONE_SIZE = 44;
-const WHEEL_ZONES: { mode: WheelMode; left: number; top: number }[] = [
-  { mode: 'flash', left: 46, top: 0 }, // rayo, arriba
-  { mode: 'camera', left: 0, top: 46 }, // cámara, izquierda
-  { mode: 'torch', left: 93, top: 46 }, // linterna, derecha
-  { mode: 'sweep', left: 46, top: 93 }, // personas en movimiento, abajo
+// Tamaño y posición de la rueda de modos — edita left/top/width/height aquí.
+const WHEEL = { left: 246, top: 676, width: 115, height: 115 };
+
+// Posición de cada ícono dentro de la rueda, como fracción de su ancho/alto (0 a 1).
+// No hace falta tocar esto al cambiar el tamaño de WHEEL — se recalculan solas.
+const WHEEL_ZONE_RATIO = 0.32; // qué tan grande es cada zona de toque, relativo al ancho de la rueda
+const WHEEL_ZONES: { mode: WheelMode; leftRatio: number; topRatio: number }[] = [
+  { mode: 'flash', leftRatio: 0.336, topRatio: 0 }, // rayo, arriba
+  { mode: 'camera', leftRatio: 0, topRatio: 0.336 }, // cámara, izquierda
+  { mode: 'torch', leftRatio: 0.679, topRatio: 0.336 }, // linterna, derecha
+  { mode: 'sweep', leftRatio: 0.336, topRatio: 0.679 }, // personas en movimiento, abajo
 ];
+const wheelZoneSize = WHEEL.width * WHEEL_ZONE_RATIO;
 
 export default function MotherShellScreen(): React.JSX.Element {
   const [mode, setMode] = useState<WheelMode>('camera');
   const [fullScreen, setFullScreen] = useState(false);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [connected, setConnected] = useState(false);
+
+  useEffect(() => {
+    PeerNetwork.startSession('movil-madre').catch((e: Error) => Alert.alert('Error de red', String(e?.message ?? e)));
+    const onConnected = peerNetworkEvents?.addListener('onPeerConnected', () => setConnected(true));
+    const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', () => setConnected(false));
+    return () => {
+      onConnected?.remove();
+      onDisconnected?.remove();
+      PeerNetwork.stopSession();
+    };
+  }, []);
 
   const disparar = async () => {
     if (busy) return;
@@ -137,7 +153,13 @@ export default function MotherShellScreen(): React.JSX.Element {
             key={zone.mode}
             style={({ pressed }) => [
               styles.wheelZone,
-              { left: zone.left, top: zone.top },
+              {
+                left: zone.leftRatio * WHEEL.width,
+                top: zone.topRatio * WHEEL.height,
+                width: wheelZoneSize,
+                height: wheelZoneSize,
+                borderRadius: wheelZoneSize / 2,
+              },
               mode === zone.mode && styles.wheelZoneSelected,
               pressed && styles.pressed,
             ]}
@@ -149,6 +171,8 @@ export default function MotherShellScreen(): React.JSX.Element {
       {photoPath && (
         <Image source={{ uri: `file://${photoPath}` }} style={styles.lastPhotoThumb} resizeMode="cover" />
       )}
+
+      <View style={[styles.connectionDot, connected ? styles.connectionDotOn : styles.connectionDotOff]} />
     </View>
   );
 }
@@ -163,9 +187,6 @@ const styles = StyleSheet.create({
   wheelImage: { width: '100%', height: '100%' },
   wheelZone: {
     position: 'absolute',
-    width: WHEEL_ZONE_SIZE,
-    height: WHEEL_ZONE_SIZE,
-    borderRadius: WHEEL_ZONE_SIZE / 2,
   },
   wheelZoneSelected: { borderWidth: 2, borderColor: '#0f0' },
   lastPhotoThumb: {
@@ -201,4 +222,14 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: '#fff',
   },
+  connectionDot: {
+    position: 'absolute',
+    right: 12,
+    top: 615,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  connectionDotOn: { backgroundColor: '#0f0' },
+  connectionDotOff: { backgroundColor: '#555' },
 });
