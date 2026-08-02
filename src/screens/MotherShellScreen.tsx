@@ -27,7 +27,7 @@ const LEFT_BUTTON = { left: 8, top: 627, width: 38, height: 45 };
 const MENU_BUTTON = { left: 156, top: 627, width: 38, height: 45 };
 const DISP_BUTTON = { left: 206, top: 627, width: 38, height: 45 };
 const SHUTTER = { left: 28, top: 640, width: 137, height: 137, borderRadius: 68.5 };
-const WHEEL = { left: 245, top: 660, width: 120, height: 120 };
+const WHEEL = { left: 245, top: 700, width: 120, height: 120 };
 
 // Zonas de toque dentro de la rueda (relativas a la esquina superior izquierda de WHEEL)
 const WHEEL_ZONE_SIZE = 44;
