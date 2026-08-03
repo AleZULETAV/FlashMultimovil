@@ -14,6 +14,8 @@ interface CameraControlNativeModule {
   setExposureDuration(durationMs: number): Promise<{ appliedDurationMs: number }>;
   /** Regresa la cámara a exposición automática continua (deja de estar "pegada" al último valor manual probado). */
   resetToAuto(): Promise<void>;
+  /** Prepara la sesión de cámara sin tomar foto, para no perder tiempo calentándola justo cuando se necesita el flash. */
+  warmUpSession(): Promise<{ ready: boolean }>;
 }
 
 const { CameraControlModule: CameraControl } = NativeModules as { CameraControlModule?: CameraControlNativeModule };

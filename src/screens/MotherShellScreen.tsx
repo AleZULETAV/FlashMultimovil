@@ -30,7 +30,7 @@ const DISP_BUTTON = { left: 206, top: 627, width: 38, height: 45 };
 const SHUTTER = { left: 28, top: 640, width: 137, height: 137, borderRadius: 68.5 };
 
 // Tamaño y posición de la rueda de modos — edita left/top/width/height aquí.
-const WHEEL = { left: 250, top: 676, width: 115, height: 115 };
+const WHEEL = { left: 245, top: 640, width: 137, height: 137 };
 const WHEEL_CENTER = { x: WHEEL.width / 2, y: WHEEL.height / 2 };
 
 // Posición angular de cada ícono en la imagen SIN rotar (0° = arriba, aumenta en sentido horario).
@@ -83,7 +83,9 @@ export default function MotherShellScreen(): React.JSX.Element {
     const onConnected = peerNetworkEvents?.addListener('onPeerConnected', () => setConnected(true));
     const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', () => setConnected(false));
 
-    Sound.setCategory('Ambient');
+    // "Playback" para que el clic se escuche aunque el teléfono esté en silencio (el interruptor
+    // físico); mixWithOthers=true para no cortar música de fondo si el usuario tiene algo sonando.
+    Sound.setCategory('Playback', true);
     soundRef.current = new Sound('wheel_sound.mp3', Sound.MAIN_BUNDLE, (error) => {
       if (error) {
         console.log('No se pudo cargar wheel_sound.mp3', error);
@@ -147,9 +149,10 @@ export default function MotherShellScreen(): React.JSX.Element {
       } else if (mode === 'torch' || mode === 'flash') {
         const message: TriggerMessage = { type: 'trigger', delayMs: 300, windowMs: 400, mode };
         PeerNetwork.broadcast(JSON.stringify(message));
-        if (mode === 'torch') {
-          await CameraControl.setExposureDuration(400).catch(() => {});
-        }
+        // Antes solo extendíamos la exposición en modo torch — pero el flash real también
+        // necesita margen: el remoto tarda en recibir el mensaje y disparar, y si el obturador
+        // ya se cerró para entonces, la luz nunca llega a la foto.
+        await CameraControl.setExposureDuration(400).catch(() => {});
         const r = await CameraCapture.takePhoto();
         setPhotoPath(r.path);
         await CameraControl.resetToAuto().catch(() => {});

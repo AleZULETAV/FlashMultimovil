@@ -22,6 +22,12 @@ export default function RemoteModeScreen(): React.JSX.Element {
   useEffect(() => {
     PeerNetwork.startSession('movil-remoto').catch((e: Error) => setSessionError(String(e?.message ?? e)));
 
+    // Retrasado a propósito: separado en el tiempo del arranque de la sesión de red,
+    // por si competir por recursos al mismo tiempo exacto del montaje sea el problema.
+    const warmUpTimeout = setTimeout(() => {
+      CameraControl.warmUpSession().catch((e: Error) => setSessionError(`warmUpSession: ${String(e?.message ?? e)}`));
+    }, 500);
+
     const onConnected = peerNetworkEvents?.addListener('onPeerConnected', () => setConnected(true));
     const onDisconnected = peerNetworkEvents?.addListener('onPeerDisconnected', () => setConnected(false));
     const onMessage = peerNetworkEvents?.addListener('onPeerMessage', (json: string) => {
@@ -77,6 +83,7 @@ export default function RemoteModeScreen(): React.JSX.Element {
     });
 
     return () => {
+      clearTimeout(warmUpTimeout);
       onConnected?.remove();
       onDisconnected?.remove();
       onMessage?.remove();

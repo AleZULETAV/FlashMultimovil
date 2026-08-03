@@ -19,6 +19,35 @@ class CameraControlModule: NSObject {
   // Hay que retener el delegate mientras dura la captura, o ARC lo libera antes de que responda.
   private var flashDelegate: FlashPulseDelegate?
 
+  /// Prepara la sesión de cámara sin tomar ninguna foto — pensado para el móvil remoto,
+  /// que a diferencia de la madre no mantiene el visor abierto y nunca "calienta" la cámara
+  /// hasta que se necesita el flash. Llamarlo apenas se abre la pantalla remota, para que
+  /// cuando de verdad llegue el disparo, la sesión ya esté lista y no se pierda tiempo en
+  /// session.startRunning() justo cuando más importa la velocidad.
+  @objc(warmUpSession:rejecter:)
+  func warmUpSession(_ resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
+    switch AVCaptureDevice.authorizationStatus(for: .video) {
+    case .authorized:
+      CameraSessionManager.shared.configureIfNeeded { success in
+        resolve(["ready": success])
+      }
+    case .notDetermined:
+      AVCaptureDevice.requestAccess(for: .video) { granted in
+        DispatchQueue.main.async {
+          if granted {
+            CameraSessionManager.shared.configureIfNeeded { success in
+              resolve(["ready": success])
+            }
+          } else {
+            resolve(["ready": false])
+          }
+        }
+      }
+    default:
+      resolve(["ready": false])
+    }
+  }
+
   @objc(setTorch:resolver:rejecter:)
   func setTorch(_ on: Bool, resolver resolve: @escaping (Any?) -> Void, rejecter reject: @escaping (String?, String?, Error?) -> Void) {
     func applyTorch() {
