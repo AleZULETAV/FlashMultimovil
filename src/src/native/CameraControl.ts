@@ -10,8 +10,12 @@ interface CameraControlNativeModule {
   setTorch(on: boolean): Promise<void>;
   /** Dispara un pulso de flash real (técnica "open flash", sección 2.2). */
   fireFlashPulse(): Promise<void>;
-  /** Extiende manualmente la duración de exposición del móvil madre. */
-  setExposureDuration(durationMs: number): Promise<void>;
+  /** Extiende manualmente la duración de exposición del móvil madre. Resuelve con la duración realmente aplicada (puede recortarse a lo que soporte el hardware). */
+  setExposureDuration(durationMs: number): Promise<{ appliedDurationMs: number }>;
+  /** Regresa la cámara a exposición automática continua (deja de estar "pegada" al último valor manual probado). */
+  resetToAuto(): Promise<void>;
+  /** Prepara la sesión de cámara sin tomar foto, para no perder tiempo calentándola justo cuando se necesita el flash. */
+  warmUpSession(): Promise<{ ready: boolean }>;
 }
 
 const { CameraControlModule: CameraControl } = NativeModules as { CameraControlModule?: CameraControlNativeModule };
